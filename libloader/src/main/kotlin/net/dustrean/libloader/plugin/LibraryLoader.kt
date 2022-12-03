@@ -8,7 +8,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.repositories.UrlArtifactRepository
-import org.gradle.api.internal.artifacts.repositories.ArtifactRepositoryInternal
 import org.gradle.api.provider.Property
 import org.gradle.jvm.tasks.Jar
 
@@ -23,14 +22,17 @@ class LibraryLoader : Plugin<Project> {
         val libraryFolder: Property<String>
         val configurationName: Property<String>
         val shadeConfiguration: Property<Configuration>
+        val jarLoaderClass: Property<String>
     }
 
     override fun apply(target: Project) {
         val extension = target.extensions.create("config", LibraryLoaderConfig::class.java)
         extension.libraryFolder.convention(".libs/")
         extension.configurationName.convention("runtimeClasspath")
+        extension.jarLoaderClass.convention("net.dustrean.libloader.boot.loaders.DefaultJarLoader")
 
         val shade = target.configurations.create("shade")
+        target.configurations.getByName("compileClasspath").extendsFrom(shade)
         extension.shadeConfiguration.set(shade)
         extension.shadeConfiguration.finalizeValue()
 
@@ -59,9 +61,10 @@ class LibraryLoader : Plugin<Project> {
                 val repoFile =
                     target.buildDir.resolve("depends//repositories.json").also { it.createNewFile() }
                 repoFile.writeText(
-                    target.repositories.filterNot { (it as UrlArtifactRepository).url.toString().startsWith("file:/") }.joinToString(separator = ",\n", prefix = "[\n", postfix = "\n]") {
-                        "\"${(it as UrlArtifactRepository).url}\""
-                    }
+                    target.repositories.filterNot { (it as UrlArtifactRepository).url.toString().startsWith("file:/") }
+                        .joinToString(separator = ",\n", prefix = "[\n", postfix = "\n]") {
+                            "\"${(it as UrlArtifactRepository).url}\""
+                        }
                 )
                 // Configuration
                 val configFile =
@@ -69,19 +72,20 @@ class LibraryLoader : Plugin<Project> {
                 configFile.writeText(
                     """
                     {
-                        "mainClass": "${if (extension.mainClass.isPresent) extension.mainClass.get() else throw DeclarationMissingException()}",
-                        "libraryFolder": "${extension.libraryFolder.get()}"
+                        ${if (extension.mainClass.isPresent) """"mainClass": "${extension.mainClass.get()}",""" else ""}
+                        "libraryFolder": "${extension.libraryFolder.get()}",
+                        "jarLoaderClass": "${extension.jarLoaderClass.get()}"
                     }
                     """.trimIndent(),
                 )
-
             }
-            it.manifest {
-                it.attributes["Main-Class"] = "net.dustrean.libloader.boot.Bootstrap"
-                it.attributes["Premain-Class"] = "net.dustrean.libloader.boot.Agent"
-                it.attributes["Agent-Class"] = "net.dustrean.libloader.boot.Agent"
-                it.attributes["Launcher-Agent-Class"] = "net.dustrean.libloader.boot.Agent"
-            }
+            if (extension.mainClass.isPresent)
+                it.manifest {
+                    it.attributes["Main-Class"] = "net.dustrean.libloader.boot.Bootstrap"
+                    it.attributes["Premain-Class"] = "net.dustrean.libloader.boot.Agent"
+                    it.attributes["Agent-Class"] = "net.dustrean.libloader.boot.Agent"
+                    it.attributes["Launcher-Agent-Class"] = "net.dustrean.libloader.boot.Agent"
+                }
         })
     }
 }
