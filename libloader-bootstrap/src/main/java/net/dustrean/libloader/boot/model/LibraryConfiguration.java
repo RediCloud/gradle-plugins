@@ -7,12 +7,10 @@ import java.util.Objects;
 public final class LibraryConfiguration {
     private final String mainClass;
     private final String libraryFolder;
-    private final String jarLoaderClass;
 
     public LibraryConfiguration(String mainClass, String libraryFolder, String jarLoaderClass) {
         this.mainClass = mainClass;
         this.libraryFolder = libraryFolder;
-        this.jarLoaderClass = jarLoaderClass;
     }
 
     public String mainClass() {
@@ -32,12 +30,12 @@ public final class LibraryConfiguration {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LibraryConfiguration that = (LibraryConfiguration) o;
-        return Objects.equals(mainClass, that.mainClass) && Objects.equals(libraryFolder, that.libraryFolder) && Objects.equals(jarLoaderClass, that.jarLoaderClass);
+        return Objects.equals(mainClass, that.mainClass) && Objects.equals(libraryFolder, that.libraryFolder);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mainClass, libraryFolder, jarLoaderClass);
+        return Objects.hash(mainClass, libraryFolder);
     }
 
     @Override
@@ -45,11 +43,7 @@ public final class LibraryConfiguration {
         return "LibraryConfiguration{" +
                 "mainClass='" + mainClass + '\'' +
                 ", libraryFolder='" + libraryFolder + '\'' +
-                ", jarLoaderClass='" + jarLoaderClass + '\'' +
                 '}';
     }
 
-    public String jarLoaderClass() {
-        return jarLoaderClass;
-    }
 }
