@@ -22,14 +22,12 @@ class LibraryLoader : Plugin<Project> {
         val libraryFolder: Property<String>
         val configurationName: Property<String>
         val shadeConfiguration: Property<Configuration>
-        val jarLoaderClass: Property<String>
     }
 
     override fun apply(target: Project) {
         val extension = target.extensions.create("config", LibraryLoaderConfig::class.java)
         extension.libraryFolder.convention(".libs/")
         extension.configurationName.convention("runtimeClasspath")
-        extension.jarLoaderClass.convention("net.dustrean.libloader.boot.loaders.DefaultJarLoader")
 
         val shade = target.configurations.create("shade")
         target.configurations.getByName("compileClasspath").extendsFrom(shade)
@@ -74,7 +72,6 @@ class LibraryLoader : Plugin<Project> {
                     {
                         ${if (extension.mainClass.isPresent) """"mainClass": "${extension.mainClass.get()}",""" else ""}
                         "libraryFolder": "${extension.libraryFolder.get()}",
-                        "jarLoaderClass": "${extension.jarLoaderClass.get()}"
                     }
                     """.trimIndent(),
                 )
