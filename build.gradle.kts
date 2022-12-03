@@ -1,29 +1,43 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.net.URI
 
 plugins {
-    kotlin("jvm") version "1.7.20"
-    application
+    kotlin("jvm") version "1.7.22"
+    id("java-gradle-plugin")
+    java
+    id("maven-publish")
 }
 
-group = "net.dustrean"
-version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
+allprojects {
+    group = "net.dustrean.libloader"
+    version = "1.0.0"
+    repositories {
+        mavenCentral()
+        maven("https://repo.gradle.org/gradle/libs-releases/")
+    }
+}
+subprojects {
+    apply(plugin = "maven-publish")
+    repositories {
+        mavenCentral()
+    }
+    publishing {
+        repositories {
+            maven {
+                name = "dustrean"
+                url = URI("https://repo.dustrean.net/releases/")
+                credentials {
+                    username = System.getProperty("dustreanUsername") ?: System.getenv("dustreanUsername")
+                    password = System.getProperty("dustreanPassword") ?: System.getenv("dustreanPassword")
+                }
+            }
+        }
+    }
+
+
+    tasks.withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "17"
+    }
 }
 
-dependencies {
-    testImplementation(kotlin("test"))
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
-}
-
-application {
-    mainClass.set("MainKt")
-}
