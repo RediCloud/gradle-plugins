@@ -27,9 +27,9 @@ subprojects {
             maven {
                 name = "dustrean"
                 url = URI("https://repo.dustrean.net/releases/")
-                credentials {
-                    username = System.getProperty("dustreanUsername") ?: System.getenv("dustreanUsername")
-                    password = System.getProperty("dustreanPassword") ?: System.getenv("dustreanPassword")
+                credentials(PasswordCredentials::class.java)
+                authentication {
+                    create<BasicAuthentication>("basic")
                 }
             }
         }
