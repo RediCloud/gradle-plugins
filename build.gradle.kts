@@ -19,6 +19,7 @@ allprojects {
 }
 subprojects {
     apply(plugin = "maven-publish")
+    apply(plugin = "java")
     repositories {
         mavenCentral()
     }
