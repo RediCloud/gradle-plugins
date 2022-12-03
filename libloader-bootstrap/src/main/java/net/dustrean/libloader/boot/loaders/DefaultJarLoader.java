@@ -8,6 +8,9 @@ import java.net.URL;
 import java.util.jar.JarFile;
 
 public class DefaultJarLoader implements JarLoader {
+    public DefaultJarLoader() {
+    }
+
     @Override
     public void load(URL javaFile) {
         try {

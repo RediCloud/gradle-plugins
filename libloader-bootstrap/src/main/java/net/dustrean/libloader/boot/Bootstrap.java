@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import net.dustrean.libloader.boot.loaders.DefaultJarLoader;
 import net.dustrean.libloader.boot.model.IgnoreConfiguration;
 import net.dustrean.libloader.boot.model.LibraryConfiguration;
 import net.dustrean.libloader.boot.model.SelfDependency;
@@ -28,10 +29,9 @@ public class Bootstrap {
     private static IgnoreConfiguration ignore;
     private static LibraryConfiguration configuration;
     private static Gson gson;
-    private static JarLoader loader;
 
     public static void main(String[] args) throws IOException {
-        apply();
+        apply(new DefaultJarLoader());
         // Run Main Class
         try {
             Class.forName(configuration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
@@ -44,17 +44,10 @@ public class Bootstrap {
         }
     }
 
-    public static void apply() throws IOException {
+    public static void apply(JarLoader loader) throws IOException {
         gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
         // Load Configuration
         configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("config.json"))), LibraryConfiguration.class);
-        try {
-            loader = (JarLoader) Class.forName(configuration.jarLoaderClass()).getConstructor()
-                            .newInstance();
-        } catch (Exception e) {
-            System.out.println("Loader init error:");
-            e.printStackTrace(System.out);
-        }
         configuration.libraryFolderFile().mkdirs();
         File ignore = new File(configuration.libraryFolder(), "ignore.json");
         if (!ignore.exists()) {
@@ -68,13 +61,13 @@ public class Bootstrap {
         JsonArray dependencies = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("dependencies.json"))), JsonArray.class);
         repositories = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("repositories.json"))), JsonArray.class);
         int initNum = Bootstrap.ignore.ignore().size();
-        dependencies.forEach((dependency) -> resolve(gson.fromJson(dependency.getAsJsonObject(), SelfDependency.class)));
+        dependencies.forEach((dependency) -> resolve(gson.fromJson(dependency.getAsJsonObject(), SelfDependency.class), loader));
     }
 
-    public static void resolve(SelfDependency dependency) {
+    public static void resolve(SelfDependency dependency, JarLoader loader) {
         dependency.dependencies().forEach((child_depend) -> {
             if (!loaded.contains(child_depend.toString())) {
-                resolve(child_depend);
+                resolve(child_depend, loader);
             }
         });
         if (ignore.ignore().contains(dependency.toString())) return;

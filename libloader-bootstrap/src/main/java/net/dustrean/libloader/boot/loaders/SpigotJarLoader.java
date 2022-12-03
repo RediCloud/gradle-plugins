@@ -22,11 +22,11 @@ import java.net.URLClassLoader;
  * </pre>
  */
 public class SpigotJarLoader implements JarLoader {
-    public static void setClassLoader(URLClassLoader classLoader) {
-        SpigotJarLoader.classLoader = classLoader;
+    public SpigotJarLoader(URLClassLoader classLoader) {
+        this.classLoader = classLoader;
     }
 
-    private static URLClassLoader classLoader;
+    private final URLClassLoader classLoader;
     @Override
     public void load(URL javaFile) {
         try {
