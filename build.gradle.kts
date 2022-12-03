@@ -39,5 +39,9 @@ subprojects {
     tasks.withType<KotlinCompile> {
         kotlinOptions.jvmTarget = "17"
     }
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
 }
 

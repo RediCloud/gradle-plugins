@@ -10,10 +10,14 @@ dependencies {
 (project.extensions.getByName("publishing") as PublishingExtension).apply {
     publications {
         create<MavenPublication>("bootstrap") {
-            this.groupId = "net.dustrean.libloader"
-            this.version = "1.0.0"
-            this.artifactId = "libloader-bootstrap"
+            this.groupId = "${project.group}"
+            this.version = "${project.version}"
+            this.artifactId = project.name
             from(components["java"])
         }
     }
+}
+(project.extensions.getByName("java") as JavaPluginExtension).apply {
+    withSourcesJar()
+    withJavadocJar()
 }
