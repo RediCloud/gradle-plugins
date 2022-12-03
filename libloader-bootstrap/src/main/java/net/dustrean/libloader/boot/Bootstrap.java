@@ -30,11 +30,33 @@ public class Bootstrap {
     private static IgnoreConfiguration ignore;
     private static LibraryConfiguration configuration;
     private static Gson gson;
+    private static JarLoader loader;
 
     public static void main(String[] args) throws IOException {
+        apply();
+        // Run Main Class
+        try {
+            Class.forName(configuration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
+        } catch (ClassNotFoundException e) {
+            System.out.println("Error while getting main class. Check your gradle build configuration.");
+        } catch (NoSuchMethodException e) {
+            System.out.println("Main method missing in class " + configuration.mainClass());
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void apply() throws IOException {
         gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
         // Load Configuration
         configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("config.json"))), LibraryConfiguration.class);
+        try {
+            loader = (JarLoader) Class.forName(configuration.jarLoaderClass()).getConstructor()
+                            .newInstance();
+        } catch (Exception e) {
+            System.out.println("Loader init error:");
+            e.printStackTrace(System.out);
+        }
         configuration.libraryFolderFile().mkdirs();
         File ignore = new File(configuration.libraryFolder(), "ignore.json");
         if (!ignore.exists()) {
@@ -49,19 +71,9 @@ public class Bootstrap {
         repositories = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("repositories.json"))), JsonArray.class);
         int initNum = Bootstrap.ignore.ignore().size();
         dependencies.forEach((dependency) -> resolve(gson.fromJson(dependency.getAsJsonObject(), SelfDependency.class)));
-        // Run Main Class
-        try {
-            Class.forName(configuration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
-        } catch (ClassNotFoundException e) {
-            System.out.println("Error while getting main class. Check your gradle build configuration.");
-        } catch (NoSuchMethodException e) {
-            System.out.println("Main method missing in class " + configuration.mainClass());
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    private static void resolve(SelfDependency dependency) {
+    public static void resolve(SelfDependency dependency) {
         dependency.dependencies().forEach((child_depend) -> {
             if (!loaded.contains(child_depend.toString())) {
                 resolve(child_depend);
@@ -126,12 +138,11 @@ public class Bootstrap {
             }
         }
         try {
-            Agent.appendJarFile(new JarFile(path));
-            loaded.add(dependency.toString());
-        } catch (Throwable t) {
-            System.out.println("Error while loading JarFile " + path.getAbsolutePath());
-            t.printStackTrace(System.out);
+            loader.load(path.toURI().toURL());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
+        loaded.add(dependency.toString());
     }
     private static boolean succeeded = false;
     public static void bootSuccess() {
