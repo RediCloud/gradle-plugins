@@ -11,9 +11,7 @@ import org.jsoup.Jsoup;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -88,7 +86,7 @@ public class Bootstrap {
                 for (JsonElement repo : repositories) {
                     try {
                         // 1. Try to get file directly, without getting any XMLs
-                        String repository = (repo.getAsString().endsWith("/") ? repo.getAsString() : repo + "/");
+                        String repository = (repo.getAsString().endsWith("/") ? repo.getAsString() : repo.getAsString() + "/");
                         HttpURLConnection connection = retrieve((HttpURLConnection) new URL(repository + dependency.toPath()).openConnection());
                         if (connection.getResponseCode() == 200) {
                             result = repository + dependency.toPath();
@@ -112,15 +110,16 @@ public class Bootstrap {
                 }
                 if (result == null) {
                     System.out.println("No matching server found for " + dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version() + "\nTried:");
-                    repositories.forEach(r -> System.out.println("    " + (r.toString().endsWith("/") ? r.toString() : r + "/") + path));
+                    repositories.forEach(r1 -> {
+                        String r = r1.getAsString();
+                        System.out.println("    " + (r.endsWith("/") ? r : r + "/") + dependency.toPath());
+                    });
                     ignore.ignore().add(dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version());
+                    return;
                 } else System.out.println("Found " + dependency);
-                assert result != null;
                 URLConnection con = retrieve((HttpURLConnection) new URL(result).openConnection());
 
                 // write content of url to file
-                System.out.println("Writing to " + path);
-                System.out.println("Parent: " + path.getParentFile());
                 InputStream inputStream = con.getInputStream();
                 path.getParentFile().mkdirs();
                 path.createNewFile();
@@ -157,7 +156,7 @@ public class Bootstrap {
     }
 
     private static HttpURLConnection retrieve(HttpURLConnection conn) {
-        if (conn.getURL().getHost().equalsIgnoreCase("ci.dustrean.net"))
+        if (conn.getURL().getHost().equalsIgnoreCase("repo.dustrean.net"))
             conn.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((System.getenv("dustreanUsername") + ":" + System.getenv("dustreanPassword")).getBytes()));
         return conn;
     }
