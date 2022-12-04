@@ -26,7 +26,7 @@ You can add the plugin by using this code:
 ```kotlin
 // build.gradle.kts
 buildscript {
-   repositories {
+   repositories { // For the plugin
         maven { 
             url = uri("https://repo.dustrean.net/releases/")
             credentials {
@@ -38,6 +38,15 @@ buildscript {
 }
 plugins {
     id("net.dustrean.libloader") version ("1.0.0")
+}
+repositories { // For the bootstrap
+   maven { 
+      url = uri("https://repo.dustrean.net/releases/")
+      credentials {
+         username = System.getenv("dustreanUsername")
+         password = System.getenv("dustreanPassword")
+      }
+   }
 }
 ```
 
