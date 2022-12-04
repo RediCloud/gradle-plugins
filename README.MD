@@ -30,8 +30,8 @@ buildscript {
         maven { 
             url = uri("https://repo.dustrean.net/releases/")
             credentials {
-                username = System.getenv("dustreanUsername")
-                password = System.getenv("dustreanPassword")
+                username = System.getenv("DUSTREAN_REPO_USERNAME")
+                password = System.getenv("DUSTREAN_REPO_PASSWORD")
             }
         }
    }
@@ -43,8 +43,8 @@ repositories { // For the bootstrap
    maven { 
       url = uri("https://repo.dustrean.net/releases/")
       credentials {
-         username = System.getenv("dustreanUsername")
-         password = System.getenv("dustreanPassword")
+         username = System.getenv("DUSTREAN_REPO_USERNAME")
+         password = System.getenv("DUSTREAN_REPO_PASSWORD")
       }
    }
 }
