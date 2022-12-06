@@ -77,7 +77,7 @@ class LibraryLoader : Plugin<Project> {
                     """
                     {
                         ${if (extension.mainClass.isPresent) """"mainClass": "${extension.mainClass.get()}",""" else ""}
-                        "libraryFolder": "${extension.libraryFolder.get()}",
+                        "libraryFolder": "${extension.libraryFolder.get()}"
                     }
                     """.trimIndent(),
                 )
