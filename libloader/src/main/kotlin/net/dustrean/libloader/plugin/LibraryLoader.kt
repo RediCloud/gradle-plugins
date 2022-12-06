@@ -7,9 +7,14 @@ import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.artifacts.repositories.UrlArtifactRepository
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.jvm.tasks.Jar
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.*
 
 class LibraryLoader : Plugin<Project> {
     class DeclarationMissingException : Exception(
@@ -22,6 +27,7 @@ class LibraryLoader : Plugin<Project> {
         val libraryFolder: Property<String>
         val configurationName: Property<String>
         val shadeConfiguration: Property<Configuration>
+        val notationList: ListProperty<String>
     }
 
     override fun apply(target: Project) {
@@ -52,7 +58,7 @@ class LibraryLoader : Plugin<Project> {
                 val dependsFile =
                     target.buildDir.resolve("depends").also { it.mkdirs() }.resolve("dependencies.json")
                 dependsFile.writeText(
-                    SelfDependencies.getSelfDependencies(configuration)
+                    SelfDependencies.getSelfDependencies(configuration).also { it.addAll(getCustomNotationDependencies(target, extension.notationList.get())) }
                         .joinToString(separator = ",", prefix = "[", postfix = "]") { it.toJson() }
                 )
                 // Repositories File
@@ -84,5 +90,14 @@ class LibraryLoader : Plugin<Project> {
                     it.attributes["Launcher-Agent-Class"] = "net.dustrean.libloader.boot.Agent"
                 }
         })
+    }
+
+    private fun getCustomNotationDependencies(project: Project, notationList: List<String>): Collection<SelfDependencies.SelfDependency> {
+        val config = project.configurations.create("Balling")
+        notationList.forEach {
+            project.dependencies.add("Balling", it)
+        }
+        val dependencies = config.resolvedConfiguration
+        return SelfDependencies.getSelfDependencies(dependencies)
     }
 }

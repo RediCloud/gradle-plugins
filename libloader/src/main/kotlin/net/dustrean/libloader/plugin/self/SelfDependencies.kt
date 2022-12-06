@@ -31,7 +31,7 @@ object SelfDependencies {
         }
     }
 
-    fun getSelfDependencies(configuration: ResolvedConfiguration): List<SelfDependency> {
+    fun getSelfDependencies(configuration: ResolvedConfiguration): MutableList<SelfDependency> {
         fun toDepend(depend: ResolvedDependency): SelfDependency? {
             if (depend.configuration == "shade") {
                 return null
@@ -47,7 +47,7 @@ object SelfDependencies {
         }
         return configuration.firstLevelModuleDependencies.mapNotNull(
             ::toDepend
-        )
+        ).toMutableList()
     }
 
 
