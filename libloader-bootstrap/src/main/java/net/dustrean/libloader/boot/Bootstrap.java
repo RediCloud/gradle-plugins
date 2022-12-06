@@ -14,23 +14,26 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Objects;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 /**
  * The on runtime loader.
  * After finishing, it will try to run the main class.
  */
 public class Bootstrap {
-    private static JsonArray repositories;
     private static final ArrayList<String> loaded = new ArrayList<>();
     private static IgnoreConfiguration ignore;
     private static LibraryConfiguration configuration;
     private static Gson gson;
+    private static HashMap<String, JsonArray> repositories = new HashMap<>();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, URISyntaxException {
         apply(new DefaultJarLoader());
         // Run Main Class
         try {
@@ -44,10 +47,10 @@ public class Bootstrap {
         }
     }
 
-    public static void apply(JarLoader loader) throws IOException {
+    public static void apply(JarLoader loader) throws IOException, URISyntaxException {
         gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
         // Load Configuration
-        configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("config.json"))), LibraryConfiguration.class);
+        configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("depends/config.json"))), LibraryConfiguration.class);
         configuration.libraryFolderFile().mkdirs();
         File ignore = new File(configuration.libraryFolder(), "ignore.json");
         if (!ignore.exists()) {
@@ -58,16 +61,26 @@ public class Bootstrap {
             ignoreWrite.close();
         }
         Bootstrap.ignore = gson.fromJson(new FileReader(ignore), IgnoreConfiguration.class);
-        JsonArray dependencies = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("dependencies.json"))), JsonArray.class);
-        repositories = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("repositories.json"))), JsonArray.class);
+        URI uri = Bootstrap.class.getClassLoader().getResource("depends").toURI();
+        FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+        Stream<Path> walk = Files.walk(fileSystem.getPath("depends"));
+        HashMap<String, JsonArray> dependencies = new HashMap<>();
+        for (Iterator<Path> it = walk.iterator(); it.hasNext(); ) {
+            Path path = it.next();
+            if (path.getFileName().toString().startsWith("dependencies")) {
+                dependencies.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
+            } else if (path.getFileName().toString().startsWith("repositories")) {
+                repositories.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
+            }
+        }
         int initNum = Bootstrap.ignore.ignore().size();
-        dependencies.forEach((dependency) -> resolve(gson.fromJson(dependency.getAsJsonObject(), SelfDependency.class), loader));
+        dependencies.forEach((_dependencies, array) -> array.forEach(dependency -> resolve(gson.fromJson(dependency.getAsJsonObject(), SelfDependency.class), loader, _dependencies)));
     }
 
-    public static void resolve(SelfDependency dependency, JarLoader loader) {
+    public static void resolve(SelfDependency dependency, JarLoader loader, String key) {
         dependency.dependencies().forEach((child_depend) -> {
             if (!loaded.contains(child_depend.toString())) {
-                resolve(child_depend, loader);
+                resolve(child_depend, loader, key);
             }
         });
         if (ignore.ignore().contains(dependency.toString())) return;
@@ -76,7 +89,7 @@ public class Bootstrap {
             try {
                 System.out.println("Downloading " + dependency);
                 String result = null;
-                for (JsonElement repo : repositories) {
+                for (JsonElement repo : repositories.get(key)) {
                     try {
                         // 1. Try to get file directly, without getting any XMLs
                         String repository = (repo.getAsString().endsWith("/") ? repo.getAsString() : repo.getAsString() + "/");
@@ -103,10 +116,10 @@ public class Bootstrap {
                 }
                 if (result == null) {
                     System.out.println("No matching server found for " + dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version() + "\nTried:");
-                    repositories.forEach(r1 -> {
+                    repositories.forEach((balling, _r1) -> _r1.forEach(r1 -> {
                         String r = r1.getAsString();
                         System.out.println("    " + (r.endsWith("/") ? r : r + "/") + dependency.toPath());
-                    });
+                    }));
                     ignore.ignore().add(dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version());
                     return;
                 } else System.out.println("Found " + dependency);
@@ -150,7 +163,7 @@ public class Bootstrap {
 
     private static HttpURLConnection retrieve(HttpURLConnection conn) {
         if (conn.getURL().getHost().equalsIgnoreCase("repo.dustrean.net"))
-            conn.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((System.getenv("dustreanUsername") + ":" + System.getenv("dustreanPassword")).getBytes()));
+            conn.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((System.getenv("DUSTREAN_REPO_USERNAME") + ":" + System.getenv("DUSTREAN_REPO_PASSWORD")).getBytes()));
         return conn;
     }
 

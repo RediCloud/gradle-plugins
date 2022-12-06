@@ -7,13 +7,10 @@ import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.artifacts.repositories.UrlArtifactRepository
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.jvm.tasks.Jar
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.*
 
 class LibraryLoader : Plugin<Project> {
@@ -28,6 +25,7 @@ class LibraryLoader : Plugin<Project> {
         val configurationName: Property<String>
         val shadeConfiguration: Property<Configuration>
         val notationList: ListProperty<String>
+        val configurationFileSuffix: Property<String>
     }
 
     override fun apply(target: Project) {
@@ -40,12 +38,15 @@ class LibraryLoader : Plugin<Project> {
         extension.shadeConfiguration.set(shade)
         extension.shadeConfiguration.finalizeValue()
 
+        extension.configurationFileSuffix.convention("-${target.name}")
+
         target.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.1.0")
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Action { it ->
             it as Jar
             it.from("${target.buildDir}/depends") {
                 it.include("**")
+                it.into("depends")
             }
             it.from("net//dustrean//libloader//boot//**")
             it.from({
@@ -56,14 +57,14 @@ class LibraryLoader : Plugin<Project> {
                     target.configurations.getByName(extension.configurationName.get()).resolvedConfiguration
                 // Dependencies File
                 val dependsFile =
-                    target.buildDir.resolve("depends").also { it.mkdirs() }.resolve("dependencies.json")
+                    target.buildDir.resolve("depends").also { it.mkdirs() }.resolve("dependencies${extension.configurationFileSuffix.get()}.json")
                 dependsFile.writeText(
                     SelfDependencies.getSelfDependencies(configuration).also { it.addAll(getCustomNotationDependencies(target, extension.notationList.get())) }
                         .joinToString(separator = ",", prefix = "[", postfix = "]") { it.toJson() }
                 )
                 // Repositories File
                 val repoFile =
-                    target.buildDir.resolve("depends//repositories.json").also { it.createNewFile() }
+                    target.buildDir.resolve("depends//repositories${extension.configurationFileSuffix.get()}.json").also { it.createNewFile() }
                 repoFile.writeText(
                     target.repositories.filterNot { (it as UrlArtifactRepository).url.toString().startsWith("file:/") }
                         .joinToString(separator = ",\n", prefix = "[\n", postfix = "\n]") {
