@@ -29,8 +29,8 @@ subprojects {
                 name = "dustrean"
                 url = URI("https://repo.dustrean.net/releases/")
                 credentials(PasswordCredentials::class.java) {
-                    username = System.getenv("dustreanUsername")
-                    password = System.getenv("dustreanPassword")
+                    username = System.getenv("DUSTREAN_REPO_USERNAME")
+                    password = System.getenv("DUSTREAN_REPO_PASSWORD")
                 }
                 authentication {
                     create<BasicAuthentication>("basic")
