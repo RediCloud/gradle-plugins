@@ -24,7 +24,7 @@ tasks.named<Jar>("jar") {
         create("libloader") {
             id = "net.dustrean.libloader"
             implementationClass = "net.dustrean.libloader.plugin.LibraryLoader"
-            version = "1.0.0"
+            version = "${project.version}"
         }
     }
 }
