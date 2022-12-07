@@ -116,10 +116,10 @@ public class Bootstrap {
                 }
                 if (result == null) {
                     System.out.println("No matching server found for " + dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version() + "\nTried:");
-                    repositories.forEach((balling, _r1) -> _r1.forEach(r1 -> {
+                    repositories.get(key).forEach(r1 -> {
                         String r = r1.getAsString();
                         System.out.println("    " + (r.endsWith("/") ? r : r + "/") + dependency.toPath());
-                    }));
+                    });
                     ignore.ignore().add(dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version());
                     return;
                 } else System.out.println("Found " + dependency);
