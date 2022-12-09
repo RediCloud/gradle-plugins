@@ -82,7 +82,7 @@ class LibraryLoader : Plugin<Project> {
 
         extension.doBootstrapShade.convention(true)
 
-        target.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.2.0")
+        target.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.3.0")
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Action { it ->
             it as Jar
@@ -105,14 +105,17 @@ class LibraryLoader : Plugin<Project> {
                     target.configurations.getByName(extension.configurationName.get()).resolvedConfiguration
                 // Dependencies File
                 val dependsFile =
-                    target.buildDir.resolve("depends").also { it.mkdirs() }.resolve("dependencies${extension.configurationFileSuffix.get()}.json")
+                    target.buildDir.resolve("depends").also { it.mkdirs() }
+                        .resolve("dependencies${extension.configurationFileSuffix.get()}.json")
                 dependsFile.writeText(
-                    SelfDependencies.getSelfDependencies(configuration).also { it.addAll(getCustomNotationDependencies(target, extension.notationList.get())) }
+                    SelfDependencies.getSelfDependencies(configuration)
+                        .also { it.addAll(getCustomNotationDependencies(target, extension.notationList.get())) }
                         .joinToString(separator = ",", prefix = "[", postfix = "]") { it.toJson() }
                 )
                 // Repositories File
                 val repoFile =
-                    target.buildDir.resolve("depends//repositories${extension.configurationFileSuffix.get()}.json").also { it.createNewFile() }
+                    target.buildDir.resolve("depends//repositories${extension.configurationFileSuffix.get()}.json")
+                        .also { it.createNewFile() }
                 repoFile.writeText(
                     target.repositories.filterNot { (it as UrlArtifactRepository).url.toString().startsWith("file:/") }
                         .joinToString(separator = ",\n", prefix = "[\n", postfix = "\n]") {
@@ -141,7 +144,10 @@ class LibraryLoader : Plugin<Project> {
         })
     }
 
-    private fun getCustomNotationDependencies(project: Project, notationList: List<String>): Collection<SelfDependencies.SelfDependency> {
+    private fun getCustomNotationDependencies(
+        project: Project,
+        notationList: List<String>
+    ): Collection<SelfDependencies.SelfDependency> {
         val config = project.configurations.create("Balling")
         notationList.forEach {
             project.dependencies.add("Balling", it)
@@ -149,3 +155,4 @@ class LibraryLoader : Plugin<Project> {
         val dependencies = config.resolvedConfiguration
         return SelfDependencies.getSelfDependencies(dependencies)
     }
+}
