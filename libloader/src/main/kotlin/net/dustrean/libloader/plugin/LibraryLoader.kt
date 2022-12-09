@@ -90,10 +90,13 @@ class LibraryLoader : Plugin<Project> {
                 it.include("**")
                 it.into("depends")
             }
-            if (extension.doBootstrapShade.get())
-                it.include("net//dustrean//libloader//boot//**")
-            else
-                it.exclude("net//dustrean//libloader//boot//**")
+            it.from("net//dustrean//libloader//boot//**") {
+                if (extension.doBootstrapShade.get()) {
+                    it.include("**")
+                } else {
+                    it.exclude("**")
+                }
+            }
             it.from({
                 shade.map { if (it.isDirectory) it else target.zipTree(it) }
             })
