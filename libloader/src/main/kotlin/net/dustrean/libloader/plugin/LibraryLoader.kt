@@ -59,6 +59,13 @@ class LibraryLoader : Plugin<Project> {
          * Defaults to the project name.
          */
         val configurationFileSuffix: Property<String>
+
+        /**
+         * Useful for dependencies.
+         * When set to false, the Bootstrap will be excluded from the jar.
+         * Default: true
+         */
+        val doBootstrapShade: Property<Boolean>
     }
 
     override fun apply(target: Project) {
@@ -73,6 +80,8 @@ class LibraryLoader : Plugin<Project> {
 
         extension.configurationFileSuffix.convention("-${target.name}")
 
+        extension.doBootstrapShade.convention(true)
+
         target.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.2.0")
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Action { it ->
@@ -81,7 +90,13 @@ class LibraryLoader : Plugin<Project> {
                 it.include("**")
                 it.into("depends")
             }
-            it.from("net//dustrean//libloader//boot//**")
+            it.from("net//dustrean//libloader//boot//**") {
+                if (extension.doBootstrapShade.get()) {
+                    it.include("**")
+                } else {
+                    it.exclude("**")
+                }
+            }
             it.from({
                 shade.map { if (it.isDirectory) it else target.zipTree(it) }
             })
@@ -134,4 +149,3 @@ class LibraryLoader : Plugin<Project> {
         val dependencies = config.resolvedConfiguration
         return SelfDependencies.getSelfDependencies(dependencies)
     }
-}
