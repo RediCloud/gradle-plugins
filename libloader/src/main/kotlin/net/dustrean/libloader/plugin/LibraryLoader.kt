@@ -20,11 +20,44 @@ class LibraryLoader : Plugin<Project> {
     )
 
     interface LibraryLoaderConfig {
+        /**
+         * The path to the main class, when present.
+         * When not set, the runtime has to initialize the Bootstrap itself by using:
+         * <pre>
+         * {@code
+         * Bootstrap.apply(...) // Use your own JarLoader
+         * }
+         * </pre>
+         */
         val mainClass: Property<String>
+
+        /**
+         * Where to download the jars to.
+         * Default: ".libs/"
+         */
         val libraryFolder: Property<String>
+
+        /**
+         * The name of the configuration to use.
+         * Default: "runtimeClasspath"
+         */
         val configurationName: Property<String>
+
+        /**
+         * The shade configuration, read-only.
+         * This will add the shaded dependencies to the jar.
+         */
         val shadeConfiguration: Property<Configuration>
+
+        /**
+         * The notations to add to the configuration, without using the default DependencyHandler.
+         */
         val notationList: ListProperty<String>
+
+        /**
+         * The suffix name setter: dependencies-SUFFIX.json and repositories-SUFFIX.json
+         * Defaults to the project name.
+         */
         val configurationFileSuffix: Property<String>
     }
 
