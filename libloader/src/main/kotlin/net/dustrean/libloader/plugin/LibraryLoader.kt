@@ -82,7 +82,7 @@ class LibraryLoader : Plugin<Project> {
 
         extension.doBootstrapShade.convention(true)
 
-        target.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.3.1")
+        target.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.3.0")
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Action { it ->
             it as Jar
