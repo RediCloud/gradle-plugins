@@ -69,7 +69,7 @@ class LibraryLoader : Plugin<Project> {
     }
 
     override fun apply(target: Project) {
-        val extension = target.extensions.create("config", LibraryLoaderConfig::class.java)
+        val extension = target.extensions.create("libloader-config", LibraryLoaderConfig::class.java)
         extension.libraryFolder.convention(".libs/")
         extension.configurationName.convention("runtimeClasspath")
 
@@ -82,7 +82,10 @@ class LibraryLoader : Plugin<Project> {
 
         extension.doBootstrapShade.convention(true)
 
-        target.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.3.2")
+        target.afterEvaluate {
+            if ((it.extensions.getByName("libloader-config") as LibraryLoaderConfig).doBootstrapShade.get())
+                it.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.3.2")
+        }
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Action { it ->
             it as Jar
@@ -92,6 +95,7 @@ class LibraryLoader : Plugin<Project> {
             }
             if (extension.doBootstrapShade.get())
                 it.from("net//dustrean//libloader//boot//**")
+
             it.from({
                 shade.map { if (it.isDirectory) it else target.zipTree(it) }
             })
