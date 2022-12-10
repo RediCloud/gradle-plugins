@@ -31,7 +31,7 @@ public class Bootstrap {
     private static IgnoreConfiguration ignore;
     private static LibraryConfiguration configuration;
     private static Gson gson;
-    private static HashMap<String, JsonArray> repositories = new HashMap<>();
+    private static final HashMap<String, JsonArray> repositories = new HashMap<>();
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         apply(new DefaultJarLoader());
@@ -48,9 +48,13 @@ public class Bootstrap {
     }
 
     public static void apply(JarLoader loader) throws IOException, URISyntaxException {
+        apply(loader, Bootstrap.class.getClassLoader(), Bootstrap.class.getClassLoader());
+    }
+
+    public static void apply(JarLoader loader, ClassLoader configClassLoader, ClassLoader... dependsClassLoader) throws IOException, URISyntaxException {
         gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
         // Load Configuration
-        configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(Bootstrap.class.getClassLoader().getResourceAsStream("depends/config.json"))), LibraryConfiguration.class);
+        configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(configClassLoader.getResourceAsStream("depends/config.json"))), LibraryConfiguration.class);
         configuration.libraryFolderFile().mkdirs();
         File ignore = new File(configuration.libraryFolder(), "ignore.json");
         if (!ignore.exists()) {
@@ -61,16 +65,18 @@ public class Bootstrap {
             ignoreWrite.close();
         }
         Bootstrap.ignore = gson.fromJson(new FileReader(ignore), IgnoreConfiguration.class);
-        URI uri = Bootstrap.class.getClassLoader().getResource("depends").toURI();
-        FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
-        Stream<Path> walk = Files.walk(fileSystem.getPath("depends"));
         HashMap<String, JsonArray> dependencies = new HashMap<>();
-        for (Iterator<Path> it = walk.iterator(); it.hasNext(); ) {
-            Path path = it.next();
-            if (path.getFileName().toString().startsWith("dependencies")) {
-                dependencies.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
-            } else if (path.getFileName().toString().startsWith("repositories")) {
-                repositories.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
+        for (ClassLoader classLoader : dependsClassLoader) {
+            URI uri = classLoader.getResource("depends").toURI();
+            FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+            Stream<Path> walk = Files.walk(fileSystem.getPath("depends"));
+            for (Iterator<Path> it = walk.iterator(); it.hasNext(); ) {
+                Path path = it.next();
+                if (path.getFileName().toString().startsWith("dependencies")) {
+                    dependencies.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
+                } else if (path.getFileName().toString().startsWith("repositories")) {
+                    repositories.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
+                }
             }
         }
         int initNum = Bootstrap.ignore.ignore().size();
