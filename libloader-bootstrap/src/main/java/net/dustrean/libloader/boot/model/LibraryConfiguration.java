@@ -3,14 +3,18 @@ package net.dustrean.libloader.boot.model;
 import java.io.File;
 import java.util.Objects;
 
-@SuppressWarnings("ClassCanBeRecord")
 public final class LibraryConfiguration {
     private final String mainClass;
     private final String libraryFolder;
 
-    public LibraryConfiguration(String mainClass, String libraryFolder, String jarLoaderClass) {
+    public LibraryConfiguration(String mainClass, String libraryFolder) {
         this.mainClass = mainClass;
         this.libraryFolder = libraryFolder;
+    }
+
+    public LibraryConfiguration() {
+        this.mainClass = null;
+        this.libraryFolder = null;
     }
 
     public String mainClass() {
@@ -18,7 +22,7 @@ public final class LibraryConfiguration {
     }
 
     public String libraryFolder() {
-        return System.getenv("LIBRARY_FOLDER") == null ? libraryFolder : System.getenv("LIBRARY_FOLDER");
+        return System.getenv("LIBRARY_FOLDER") == null ? Objects.requireNonNull(libraryFolder) : System.getenv("LIBRARY_FOLDER");
     }
 
     public File libraryFolderFile() {
