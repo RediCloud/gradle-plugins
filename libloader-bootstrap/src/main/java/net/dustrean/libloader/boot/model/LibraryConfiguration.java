@@ -26,7 +26,7 @@ public final class LibraryConfiguration {
     }
 
     public File libraryFolderFile() {
-        return new File(libraryFolder);
+        return new File(libraryFolder());
     }
 
     @Override
