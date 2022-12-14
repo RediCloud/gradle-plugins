@@ -84,7 +84,7 @@ class LibraryLoader : Plugin<Project> {
 
         target.afterEvaluate {
             if ((it.extensions.getByName("libloader-config") as LibraryLoaderConfig).doBootstrapShade.get())
-                it.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.4.0")
+                it.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.5.0")
         }
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Action { it ->
