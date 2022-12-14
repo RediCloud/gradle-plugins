@@ -1,9 +1,6 @@
 package net.dustrean.libloader.boot;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
+import com.google.gson.*;
 import net.dustrean.libloader.boot.loaders.DefaultJarLoader;
 import net.dustrean.libloader.boot.model.IgnoreConfiguration;
 import net.dustrean.libloader.boot.model.LibraryConfiguration;
@@ -19,7 +16,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 /**
@@ -27,44 +23,55 @@ import java.util.stream.Stream;
  * After finishing, it will try to run the main class.
  */
 public class Bootstrap {
-    private static final ArrayList<String> loaded = new ArrayList<>();
-    private static IgnoreConfiguration ignore;
-    private static LibraryConfiguration configuration;
-    private static Gson gson;
-    private static final HashMap<String, JsonArray> repositories = new HashMap<>();
+    private final ArrayList<String> loaded = new ArrayList<>();
+    private IgnoreConfiguration ignore;
+    private LibraryConfiguration configuration;
+    private final Gson gson;
+    private final HashMap<String, JsonArray> repositories = new HashMap<>();
+
+    public Bootstrap() {
+        this.gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    }
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-        apply(new DefaultJarLoader());
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.apply(new DefaultJarLoader());
         // Run Main Class
         try {
-            Class.forName(configuration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
+            Class.forName(bootstrap.configuration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
         } catch (ClassNotFoundException e) {
             System.out.println("Error while getting main class. Check your gradle build configuration.");
         } catch (NoSuchMethodException e) {
-            System.out.println("Main method missing in class " + configuration.mainClass());
+            System.out.println("Main method missing in class " + bootstrap.configuration.mainClass());
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void apply(JarLoader loader) throws IOException, URISyntaxException {
+    public void apply(JarLoader loader) throws IOException, URISyntaxException {
         apply(loader, Bootstrap.class.getClassLoader(), Bootstrap.class.getClassLoader());
     }
 
-    public static void apply(JarLoader loader, ClassLoader configClassLoader, ClassLoader... dependsClassLoader) throws IOException, URISyntaxException {
-        gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+
+    private int ignoreInitialCount;
+
+    public void apply(JarLoader loader, ClassLoader configClassLoader, ClassLoader... dependsClassLoader) throws IOException, URISyntaxException {
         // Load Configuration
-        configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(configClassLoader.getResourceAsStream("depends/config.json"))), LibraryConfiguration.class);
+        try {
+            configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(configClassLoader.getResourceAsStream("depends/config.json"))), LibraryConfiguration.class);
+        } catch (Throwable e) {
+            configuration = new LibraryConfiguration();
+        }
         configuration.libraryFolderFile().mkdirs();
-        File ignore = new File(configuration.libraryFolder(), "ignore.json");
-        if (!ignore.exists()) {
-            FileWriter ignoreWrite = new FileWriter(ignore);
-            ignore.createNewFile();
+        File ignoreFile = new File(configuration.libraryFolder(), "ignore.json");
+        if (!ignoreFile.exists()) {
+            FileWriter ignoreWrite = new FileWriter(ignoreFile);
+            ignoreFile.createNewFile();
             gson.toJson(new IgnoreConfiguration(new ArrayList<>()), ignoreWrite);
             ignoreWrite.flush();
             ignoreWrite.close();
         }
-        Bootstrap.ignore = gson.fromJson(new FileReader(ignore), IgnoreConfiguration.class);
+        this.ignore = gson.fromJson(new FileReader(ignoreFile), IgnoreConfiguration.class);
         HashMap<String, JsonArray> dependencies = new HashMap<>();
         for (ClassLoader classLoader : dependsClassLoader) {
             URI uri = classLoader.getResource("depends").toURI();
@@ -79,11 +86,11 @@ public class Bootstrap {
                 }
             }
         }
-        int initNum = Bootstrap.ignore.ignore().size();
+        ignoreInitialCount = ignore.ignore().size();
         dependencies.forEach((_dependencies, array) -> array.forEach(dependency -> resolve(gson.fromJson(dependency.getAsJsonObject(), SelfDependency.class), loader, _dependencies)));
     }
 
-    public static void resolve(SelfDependency dependency, JarLoader loader, String key) {
+    public void resolve(SelfDependency dependency, JarLoader loader, String key) {
         dependency.dependencies().forEach((child_depend) -> {
             if (!loaded.contains(child_depend.toString())) {
                 resolve(child_depend, loader, key);
@@ -155,16 +162,19 @@ public class Bootstrap {
         }
         loaded.add(dependency.toString());
     }
-    private static boolean succeeded = false;
-    public static void bootSuccess() {
-        if (succeeded) return;
+
+    private boolean succeeded = false;
+
+    public void bootSuccess() {
+        if (succeeded || ignoreInitialCount <= ignore.ignore().size()) return;
         try {
             FileWriter writer = new FileWriter(new File(configuration.libraryFolderFile(), "ignore.json"));
             gson.toJson(ignore, writer);
             writer.flush();
             writer.close();
             succeeded = true;
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private static HttpURLConnection retrieve(HttpURLConnection conn) {
