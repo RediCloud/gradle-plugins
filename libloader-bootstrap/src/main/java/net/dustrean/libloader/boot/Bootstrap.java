@@ -98,7 +98,7 @@ public class Bootstrap {
         });
         if (ignore.ignore().contains(dependency.toString())) return;
         File path = new File(configuration.libraryFolderFile(), dependency.toPath());
-        if (!path.exists()) {
+        if (!path.exists() || (dependency.groupId().startsWith("net.dustrean") && dependency.version().endsWith("SNAPSHOT"))) {
             try {
                 System.out.println("Downloading " + dependency);
                 String result = null;
