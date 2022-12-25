@@ -85,6 +85,8 @@ public class Bootstrap {
                     repositories.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
                 }
             }
+            walk.close();
+            fileSystem.close();
         }
         ignoreInitialCount = ignore.ignore().size();
         dependencies.forEach((_dependencies, array) -> array.forEach(dependency -> resolve(gson.fromJson(dependency.getAsJsonObject(), SelfDependency.class), loader, _dependencies)));
