@@ -11,7 +11,7 @@ plugins {
 
 allprojects {
     group = "net.dustrean.libloader"
-    version = "1.5.2"
+    version = "1.5.3"
     repositories {
         mavenCentral()
         maven("https://repo.gradle.org/gradle/libs-releases/")
