@@ -36,7 +36,6 @@ object SelfDependencies {
             if (depend.configuration == "shade") {
                 return null
             }
-            println(depend)
             return SelfDependency(
                 depend,
                 depend.module.id.group,
