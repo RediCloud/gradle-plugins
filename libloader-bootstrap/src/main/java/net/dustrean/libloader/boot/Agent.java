@@ -5,6 +5,7 @@ import java.util.jar.JarFile;
 
 public class Agent {
     static Instrumentation instrumentation = null;
+
     public static void agentmain(String agentArgs, Instrumentation inst) {
         if (inst != null && instrumentation == null) {
             System.out.println("[Agent-Main] Loaded Instrumentation");

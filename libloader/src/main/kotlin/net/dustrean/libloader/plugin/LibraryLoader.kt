@@ -87,8 +87,7 @@ class LibraryLoader : Plugin<Project> {
                 it.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.5.3")
         }
         @Suppress("RedundantSamConstructor")
-        target.tasks.named("jar", Action { it ->
-            it as Jar
+        target.tasks.named("jar", Jar::class.java, Action { it ->
             it.from("${target.buildDir}/depends") {
                 it.include("**")
                 it.into("depends")

@@ -1,6 +1,9 @@
 package net.dustrean.libloader.boot;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import net.dustrean.libloader.boot.loaders.DefaultJarLoader;
 import net.dustrean.libloader.boot.model.IgnoreConfiguration;
 import net.dustrean.libloader.boot.model.LibraryConfiguration;
@@ -24,10 +27,12 @@ import java.util.stream.Stream;
  */
 public class Bootstrap {
     private final ArrayList<String> loaded = new ArrayList<>();
-    private IgnoreConfiguration ignore;
-    private LibraryConfiguration configuration;
     private final Gson gson;
     private final HashMap<String, JsonArray> repositories = new HashMap<>();
+    private IgnoreConfiguration ignore;
+    private LibraryConfiguration configuration;
+    private int ignoreInitialCount;
+    private boolean succeeded = false;
 
     public Bootstrap() {
         this.gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
@@ -48,12 +53,26 @@ public class Bootstrap {
         }
     }
 
+    private static HttpURLConnection retrieve(HttpURLConnection conn) {
+        if (conn.getURL().getHost().equalsIgnoreCase("repo.dustrean.net"))
+            conn.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((System.getenv("DUSTREAN_REPO_USERNAME") + ":" + System.getenv("DUSTREAN_REPO_PASSWORD")).getBytes()));
+        return conn;
+    }
+
+    private static String readString(InputStream inputStream) throws IOException {
+        int bufferSize = 1024;
+        char[] buffer = new char[bufferSize];
+        StringBuilder out = new StringBuilder();
+        Reader in = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+        for (int numRead; (numRead = in.read(buffer, 0, buffer.length)) > 0; ) {
+            out.append(buffer, 0, numRead);
+        }
+        return out.toString();
+    }
+
     public void apply(JarLoader loader) throws IOException, URISyntaxException {
         apply(loader, Bootstrap.class.getClassLoader(), Bootstrap.class.getClassLoader());
     }
-
-
-    private int ignoreInitialCount;
 
     public void apply(JarLoader loader, ClassLoader configClassLoader, ClassLoader... dependsClassLoader) throws IOException, URISyntaxException {
         // Load Configuration
@@ -165,8 +184,6 @@ public class Bootstrap {
         loaded.add(dependency.toString());
     }
 
-    private boolean succeeded = false;
-
     public void bootSuccess() {
         if (succeeded || ignoreInitialCount <= ignore.ignore().size()) return;
         try {
@@ -177,22 +194,5 @@ public class Bootstrap {
             succeeded = true;
         } catch (Exception ignored) {
         }
-    }
-
-    private static HttpURLConnection retrieve(HttpURLConnection conn) {
-        if (conn.getURL().getHost().equalsIgnoreCase("repo.dustrean.net"))
-            conn.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((System.getenv("DUSTREAN_REPO_USERNAME") + ":" + System.getenv("DUSTREAN_REPO_PASSWORD")).getBytes()));
-        return conn;
-    }
-
-    private static String readString(InputStream inputStream) throws IOException {
-        int bufferSize = 1024;
-        char[] buffer = new char[bufferSize];
-        StringBuilder out = new StringBuilder();
-        Reader in = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-        for (int numRead; (numRead = in.read(buffer, 0, buffer.length)) > 0; ) {
-            out.append(buffer, 0, numRead);
-        }
-        return out.toString();
     }
 }

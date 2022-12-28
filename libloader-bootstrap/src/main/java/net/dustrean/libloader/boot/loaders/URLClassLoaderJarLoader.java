@@ -18,11 +18,12 @@ import java.net.URLClassLoader;
  * </pre>
  */
 public class URLClassLoaderJarLoader implements JarLoader {
+    private final URLClassLoader classLoader;
+
     public URLClassLoaderJarLoader(URLClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
-    private final URLClassLoader classLoader;
     @Override
     public void load(URL javaFile) {
         try {
