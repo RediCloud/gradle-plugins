@@ -30,9 +30,9 @@ public class Utils {
             for (Iterator<Path> it = walk.iterator(); it.hasNext(); ) {
                 Path path = it.next();
                 if (path.getFileName().toString().startsWith("dependencies")) {
-                    dependencies.add(gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), DEPENDENCY_TYPE));
+                    dependencies.addAll(gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), DEPENDENCY_TYPE));
                 } else if (path.getFileName().toString().startsWith("repositories")) {
-                    repositories.add(gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), REPOSITORY_TYPE));
+                    repositories.addAll(gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), REPOSITORY_TYPE));
                 }
             }
             walk.close();
