@@ -4,6 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
+import net.dustrean.libloader.boot.apply.ResourceLoader;
+import net.dustrean.libloader.boot.apply.impl.ClassLoaderResourceLoader;
 import net.dustrean.libloader.boot.loaders.DefaultJarLoader;
 import net.dustrean.libloader.boot.model.IgnoreConfiguration;
 import net.dustrean.libloader.boot.model.LibraryConfiguration;
@@ -12,6 +15,7 @@ import org.jsoup.Jsoup;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
@@ -26,17 +30,16 @@ import java.util.stream.Stream;
  * After finishing, it will try to run the main class.
  */
 public class Bootstrap {
+    public static final Type DEPENDENCY_TYPE = new TypeToken<ArrayList<SelfDependency>>() {}.getType();
+    public static final Type REPOSITORY_TYPE = new TypeToken<ArrayList<String>>() {}.getType();
     private final ArrayList<String> loaded = new ArrayList<>();
-    private final Gson gson;
-    private final HashMap<String, JsonArray> repositories = new HashMap<>();
+    public static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+
     private IgnoreConfiguration ignore;
     private LibraryConfiguration configuration;
     private int ignoreInitialCount;
     private boolean succeeded = false;
 
-    public Bootstrap() {
-        this.gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-    }
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         Bootstrap bootstrap = new Bootstrap();
@@ -71,10 +74,10 @@ public class Bootstrap {
     }
 
     public void apply(JarLoader loader) throws IOException, URISyntaxException {
-        apply(loader, Bootstrap.class.getClassLoader(), Bootstrap.class.getClassLoader());
+        apply(loader, Bootstrap.class.getClassLoader(), new ClassLoaderResourceLoader(Bootstrap.class.getClassLoader().getName(), Bootstrap.class.getClassLoader()));
     }
 
-    public void apply(JarLoader loader, ClassLoader configClassLoader, ClassLoader... dependsClassLoader) throws IOException, URISyntaxException {
+    public void apply(JarLoader loader, ClassLoader configClassLoader, ResourceLoader... resourceLoaders) throws IOException, URISyntaxException {
         // Load Configuration
         try {
             configuration = gson.fromJson(new InputStreamReader(Objects.requireNonNull(configClassLoader.getResourceAsStream("depends/config.json"))), LibraryConfiguration.class);
@@ -91,30 +94,25 @@ public class Bootstrap {
             ignoreWrite.close();
         }
         this.ignore = gson.fromJson(new FileReader(ignoreFile), IgnoreConfiguration.class);
-        HashMap<String, JsonArray> dependencies = new HashMap<>();
-        for (ClassLoader classLoader : dependsClassLoader) {
-            URI uri = classLoader.getResource("depends").toURI();
-            FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
-            Stream<Path> walk = Files.walk(fileSystem.getPath("depends"));
-            for (Iterator<Path> it = walk.iterator(); it.hasNext(); ) {
-                Path path = it.next();
-                if (path.getFileName().toString().startsWith("dependencies")) {
-                    dependencies.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
-                } else if (path.getFileName().toString().startsWith("repositories")) {
-                    repositories.put(path.getFileName().toString().substring(13), gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), JsonArray.class));
-                }
-            }
-            walk.close();
-            fileSystem.close();
-        }
         ignoreInitialCount = ignore.ignore().size();
-        dependencies.forEach((_dependencies, array) -> array.forEach(dependency -> resolve(gson.fromJson(dependency.getAsJsonObject(), SelfDependency.class), loader, _dependencies)));
+        for (ResourceLoader resourceLoader : resourceLoaders) {
+            List<String> repositories = resourceLoader.getRepositories();
+            List<SelfDependency> dependencies = resourceLoader.getDependencies();
+
+            if (System.getProperty("libloader.debug") != null)
+                System.out.println("Loading " + dependencies.size() + " dependencies from " + resourceLoader.getName());
+
+            dependencies.forEach(selfDependency -> {
+                resolve(selfDependency, loader, repositories);
+            });
+        }
+
     }
 
-    public void resolve(SelfDependency dependency, JarLoader loader, String key) {
+    public void resolve(SelfDependency dependency, JarLoader loader, List<String> repositories) {
         dependency.dependencies().forEach((child_depend) -> {
             if (!loaded.contains(child_depend.toString())) {
-                resolve(child_depend, loader, key);
+                resolve(child_depend, loader, repositories);
             }
         });
         if (ignore.ignore().contains(dependency.toString())) return;
@@ -123,21 +121,17 @@ public class Bootstrap {
             try {
                 System.out.println("Downloading " + dependency);
                 String result = null;
-                for (JsonElement repo : repositories.get(key)) {
+                for (String repo : repositories) {
+                    String repository = (repo.endsWith("/") ? repo : repo + "/");
                     try {
                         // 1. Try to get file directly, without getting any XMLs
-                        String repository = (repo.getAsString().endsWith("/") ? repo.getAsString() : repo.getAsString() + "/");
                         HttpURLConnection connection = retrieve((HttpURLConnection) new URL(repository + dependency.toPath()).openConnection());
                         if (connection.getResponseCode() == 200) {
                             result = repository + dependency.toPath();
                             break;
                         } else {
                             // 2. Try to get latest from maven-metadata.xml
-                            HttpURLConnection connection1 = retrieve((HttpURLConnection) new URL(
-                                    repository + dependency.groupId().replace(".", "/") + "/" +
-                                            dependency.artifactId() + "/" + dependency.version() + "/" +
-                                            "maven-metadata.xml"
-                            ).openConnection());
+                            HttpURLConnection connection1 = retrieve((HttpURLConnection) new URL(repository + dependency.groupId().replace(".", "/") + "/" + dependency.artifactId() + "/" + dependency.version() + "/" + "maven-metadata.xml").openConnection());
                             if (connection1.getResponseCode() == 200) {
                                 String version = Jsoup.parse(readString(connection1.getInputStream())).select("snapshotVersion:has(extension:contains(jar))").first().select("value").first().text();
                                 result = repository + dependency.groupId().replace(".", "/") + "/" + dependency.artifactId() + "/" + dependency.version() + "/" + dependency.artifactId() + "-" + version + ".jar";
@@ -150,8 +144,7 @@ public class Bootstrap {
                 }
                 if (result == null) {
                     System.out.println("No matching server found for " + dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version() + "\nTried:");
-                    repositories.get(key).forEach(r1 -> {
-                        String r = r1.getAsString();
+                    repositories.forEach(r -> {
                         System.out.println("    " + (r.endsWith("/") ? r : r + "/") + dependency.toPath());
                     });
                     ignore.ignore().add(dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version());
