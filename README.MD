@@ -37,7 +37,7 @@ buildscript {
    }
 }
 plugins {
-    id("net.dustrean.libloader") version ("1.6.1")
+    id("net.dustrean.libloader") version ("1.6.2")
 }
 repositories { // For the bootstrap
    maven { 
