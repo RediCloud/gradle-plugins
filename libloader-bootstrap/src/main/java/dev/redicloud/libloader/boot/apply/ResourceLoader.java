@@ -1,6 +1,6 @@
-package net.dustrean.libloader.boot.apply;
+package dev.redicloud.libloader.boot.apply;
 
-import net.dustrean.libloader.boot.model.SelfDependency;
+import dev.redicloud.libloader.boot.model.SelfDependency;
 
 import java.util.List;
 

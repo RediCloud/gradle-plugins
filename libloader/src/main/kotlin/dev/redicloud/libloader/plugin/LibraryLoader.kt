@@ -1,8 +1,8 @@
 @file:JvmName("LibraryLoader")
 
-package net.dustrean.libloader.plugin
+package dev.redicloud.libloader.plugin
 
-import net.dustrean.libloader.plugin.self.SelfDependencies
+import dev.redicloud.libloader.plugin.self.SelfDependencies
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project

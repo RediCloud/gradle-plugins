@@ -1,4 +1,4 @@
-package net.dustrean.libloader.boot.model;
+package dev.redicloud.libloader.boot.model;
 
 import java.io.File;
 import java.util.Objects;

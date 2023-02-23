@@ -1,4 +1,4 @@
-package net.dustrean.libloader.boot;
+package dev.redicloud.libloader.boot;
 
 import java.net.URL;
 

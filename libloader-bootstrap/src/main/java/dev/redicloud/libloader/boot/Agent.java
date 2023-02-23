@@ -1,4 +1,4 @@
-package net.dustrean.libloader.boot;
+package dev.redicloud.libloader.boot;
 
 import java.lang.instrument.Instrumentation;
 import java.util.jar.JarFile;

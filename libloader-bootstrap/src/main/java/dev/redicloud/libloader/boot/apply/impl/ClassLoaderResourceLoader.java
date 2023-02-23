@@ -1,12 +1,11 @@
-package net.dustrean.libloader.boot.apply.impl;
+package dev.redicloud.libloader.boot.apply.impl;
 
-import net.dustrean.libloader.boot.Utils;
-import net.dustrean.libloader.boot.apply.ResourceLoader;
-import net.dustrean.libloader.boot.model.SelfDependency;
+import dev.redicloud.libloader.boot.model.SelfDependency;
+import dev.redicloud.libloader.boot.Utils;
+import dev.redicloud.libloader.boot.apply.ResourceLoader;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ClassLoaderResourceLoader implements ResourceLoader {

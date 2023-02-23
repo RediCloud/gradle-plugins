@@ -1,15 +1,12 @@
-package net.dustrean.libloader.boot.apply.impl;
+package dev.redicloud.libloader.boot.apply.impl;
 
-import net.dustrean.libloader.boot.Utils;
-import net.dustrean.libloader.boot.apply.ResourceLoader;
-import net.dustrean.libloader.boot.model.SelfDependency;
+import dev.redicloud.libloader.boot.model.SelfDependency;
+import dev.redicloud.libloader.boot.Utils;
+import dev.redicloud.libloader.boot.apply.ResourceLoader;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.jar.JarFile;
 
 public class JarResourceLoader implements ResourceLoader {
     private final String name;

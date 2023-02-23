@@ -22,8 +22,8 @@ tasks.named<Jar>("jar") {
 (project.extensions.getByName("gradlePlugin") as GradlePluginDevelopmentExtension).apply {
     plugins {
         create("libloader") {
-            id = "net.dustrean.libloader"
-            implementationClass = "net.dustrean.libloader.plugin.LibraryLoader"
+            id = "dev.redicloud.libloader"
+            implementationClass = "dev.redicloud.libloader.plugin.LibraryLoader"
             version = "${project.version}"
         }
     }

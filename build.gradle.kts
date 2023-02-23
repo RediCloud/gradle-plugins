@@ -10,7 +10,7 @@ plugins {
 
 
 allprojects {
-    group = "net.dustrean.libloader"
+    group = "dev.redicloud.libloader"
     version = "1.6.2"
     repositories {
         mavenCentral()
@@ -27,10 +27,10 @@ subprojects {
         repositories {
             maven {
                 name = "dustrean"
-                url = URI("https://repo.dustrean.net/releases/")
+                url = URI("https://repo.redicloud.dev/releases/")
                 credentials(PasswordCredentials::class.java) {
-                    username = System.getenv("DUSTREAN_REPO_USERNAME")
-                    password = System.getenv("DUSTREAN_REPO_PASSWORD")
+                    username = System.getenv("REDI_CLOUD_REPO_USERNAME")
+                    password = System.getenv("REDI_CLOUD_REPO_PASSWORD")
                 }
                 authentication {
                     create<BasicAuthentication>("basic")

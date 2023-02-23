@@ -1,7 +1,7 @@
-package net.dustrean.libloader.boot.loaders;
+package dev.redicloud.libloader.boot.loaders;
 
-import net.dustrean.libloader.boot.Agent;
-import net.dustrean.libloader.boot.JarLoader;
+import dev.redicloud.libloader.boot.Agent;
+import dev.redicloud.libloader.boot.JarLoader;
 
 import java.io.File;
 import java.net.URL;

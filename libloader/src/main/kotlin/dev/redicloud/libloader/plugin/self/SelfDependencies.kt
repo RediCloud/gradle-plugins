@@ -1,4 +1,4 @@
-package net.dustrean.libloader.plugin.self
+package dev.redicloud.libloader.plugin.self
 
 import org.gradle.api.artifacts.ResolvedConfiguration
 import org.gradle.api.artifacts.ResolvedDependency

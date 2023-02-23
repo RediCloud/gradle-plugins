@@ -1,16 +1,14 @@
-package net.dustrean.libloader.boot;
+package dev.redicloud.libloader.boot;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
-import net.dustrean.libloader.boot.apply.ResourceLoader;
-import net.dustrean.libloader.boot.apply.impl.ClassLoaderResourceLoader;
-import net.dustrean.libloader.boot.loaders.DefaultJarLoader;
-import net.dustrean.libloader.boot.model.IgnoreConfiguration;
-import net.dustrean.libloader.boot.model.LibraryConfiguration;
-import net.dustrean.libloader.boot.model.SelfDependency;
+import dev.redicloud.libloader.boot.apply.ResourceLoader;
+import dev.redicloud.libloader.boot.apply.impl.ClassLoaderResourceLoader;
+import dev.redicloud.libloader.boot.loaders.DefaultJarLoader;
+import dev.redicloud.libloader.boot.model.IgnoreConfiguration;
+import dev.redicloud.libloader.boot.model.LibraryConfiguration;
+import dev.redicloud.libloader.boot.model.SelfDependency;
 import org.jsoup.Jsoup;
 
 import java.io.*;
@@ -18,12 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * The on runtime loader.

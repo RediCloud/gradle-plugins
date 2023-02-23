@@ -1,6 +1,6 @@
-package net.dustrean.libloader.boot;
+package dev.redicloud.libloader.boot;
 
-import net.dustrean.libloader.boot.model.SelfDependency;
+import dev.redicloud.libloader.boot.model.SelfDependency;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,11 +13,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static net.dustrean.libloader.boot.Bootstrap.*;
+import static dev.redicloud.libloader.boot.Bootstrap.*;
 
 public class Utils {
     public record Pair<F, S>(F first, S second) {}

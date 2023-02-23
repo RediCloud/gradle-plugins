@@ -1,6 +1,6 @@
-package net.dustrean.libloader.boot.loaders;
+package dev.redicloud.libloader.boot.loaders;
 
-import net.dustrean.libloader.boot.JarLoader;
+import dev.redicloud.libloader.boot.JarLoader;
 
 import java.lang.reflect.Method;
 import java.net.URL;
