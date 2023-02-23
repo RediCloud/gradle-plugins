@@ -28,6 +28,7 @@ subprojects {
             maven {
                 name = "redicloud"
                 url = URI("https://repo.redicloud.dev/releases/")
+                /*
                 credentials(PasswordCredentials::class.java) {
                     username = System.getenv("REDI_CLOUD_REPO_USERNAME")
                     password = System.getenv("REDI_CLOUD_REPO_PASSWORD")
@@ -35,6 +36,7 @@ subprojects {
                 authentication {
                     create<BasicAuthentication>("basic")
                 }
+                 */
             }
         }
     }
