@@ -1,6 +1,6 @@
 # Gradle Plugins
 
-This Project contains all Gradle plugins made for dustrean-network.
+This Project contains all Gradle plugins made for redicloud.
 
 # Table of Contents
 
@@ -28,23 +28,23 @@ You can add the plugin by using this code:
 buildscript {
    repositories { // For the plugin
         maven { 
-            url = uri("https://repo.dustrean.net/releases/")
+            url = uri("https://repo.redicloud.dev/releases/")
             credentials {
-                username = System.getenv("DUSTREAN_REPO_USERNAME")
-                password = System.getenv("DUSTREAN_REPO_PASSWORD")
+                username = System.getenv("REDI_CLOUD_REPO_USERNAME")
+                password = System.getenv("REDI_CLOUD_REPO_PASSWORD")
             }
         }
    }
 }
 plugins {
-    id("net.dustrean.libloader") version ("1.6.2")
+    id("dev.redicloud.libloader") version ("1.6.2")
 }
 repositories { // For the bootstrap
    maven { 
-      url = uri("https://repo.dustrean.net/releases/")
+      url = uri("https://repo.redicloud.dev/releases/")
       credentials {
-         username = System.getenv("DUSTREAN_REPO_USERNAME")
-         password = System.getenv("DUSTREAN_REPO_PASSWORD")
+         username = System.getenv("REDI_CLOUD_REPO_USERNAME")
+         password = System.getenv("REDI_CLOUD_REPO_PASSWORD")
       }
    }
 }
@@ -54,10 +54,10 @@ repositories { // For the bootstrap
 
 ```kotlin
 // build.gradle.kts
-import net.dustrean.libloader.plugin.LibraryLoader.LibraryLoaderConfig
+import dev.redicloud.libloader.plugin.LibraryLoader.LibraryLoaderConfig
 //...
 the(LibraryLoaderConfig::class).apply {
-    this.mainClass.set("net.dustrean.testing.Main") // Not mandatory when using non-standalone Jars, see chapter Bootloader
+    this.mainClass.set("dev.redicloud.testing.Main") // Not mandatory when using non-standalone Jars, see chapter Bootloader
     this.libraryFolder.set(".libs/") // Default Value
     this.configurationName.set("runtimeClasspath") // Default Value, configuration to use for dependencies
 }

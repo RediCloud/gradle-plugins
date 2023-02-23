@@ -84,7 +84,7 @@ class LibraryLoader : Plugin<Project> {
 
         target.afterEvaluate {
             if ((it.extensions.getByName("libloader-config") as LibraryLoaderConfig).doBootstrapShade.get())
-                it.dependencies.add("shade", "net.dustrean.libloader:libloader-bootstrap:1.6.2")
+                it.dependencies.add("shade", "dev.redicloud.libloader:libloader-bootstrap:1.6.2")
         }
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Jar::class.java, Action { it ->
@@ -93,7 +93,7 @@ class LibraryLoader : Plugin<Project> {
                 it.into("depends")
             }
             if (extension.doBootstrapShade.get())
-                it.from("net//dustrean//libloader//boot//**")
+                it.from("dev//redicloud//libloader//boot//**")
 
             it.from({
                 shade.map { if (it.isDirectory) it else target.zipTree(it) }
@@ -134,10 +134,10 @@ class LibraryLoader : Plugin<Project> {
             }
             if (extension.mainClass.isPresent)
                 it.manifest {
-                    it.attributes["Main-Class"] = "net.dustrean.libloader.boot.Bootstrap"
-                    it.attributes["Premain-Class"] = "net.dustrean.libloader.boot.Agent"
-                    it.attributes["Agent-Class"] = "net.dustrean.libloader.boot.Agent"
-                    it.attributes["Launcher-Agent-Class"] = "net.dustrean.libloader.boot.Agent"
+                    it.attributes["Main-Class"] = "dev.redicloud.libloader.boot.Bootstrap"
+                    it.attributes["Premain-Class"] = "dev.redicloud.libloader.boot.Agent"
+                    it.attributes["Agent-Class"] = "dev.redicloud.libloader.boot.Agent"
+                    it.attributes["Launcher-Agent-Class"] = "dev.redicloud.libloader.boot.Agent"
                 }
         })
     }

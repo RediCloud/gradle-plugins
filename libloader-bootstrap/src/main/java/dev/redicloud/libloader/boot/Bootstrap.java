@@ -50,8 +50,8 @@ public class Bootstrap {
     }
 
     private static HttpURLConnection retrieve(HttpURLConnection conn) {
-        if (conn.getURL().getHost().equalsIgnoreCase("repo.dustrean.net"))
-            conn.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((System.getenv("DUSTREAN_REPO_USERNAME") + ":" + System.getenv("DUSTREAN_REPO_PASSWORD")).getBytes()));
+        if (conn.getURL().getHost().equalsIgnoreCase("repo.redicloud.dev"))
+            conn.addRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((System.getenv("REDI_CLOUD_REPO_USERNAME") + ":" + System.getenv("REDI_CLOUD_REPO_PASSWORD")).getBytes()));
         return conn;
     }
 
@@ -110,7 +110,7 @@ public class Bootstrap {
         });
         if (ignore.ignore().contains(dependency.toString())) return;
         File path = new File(configuration.libraryFolderFile(), dependency.toPath());
-        if (!path.exists() || (dependency.groupId().startsWith("net.dustrean") && dependency.version().endsWith("SNAPSHOT"))) {
+        if (!path.exists() || (dependency.groupId().startsWith("dev.redicloud") && dependency.version().endsWith("SNAPSHOT"))) {
             try {
                 System.out.println("Downloading " + dependency);
                 String result = null;
