@@ -27,26 +27,14 @@ You can add the plugin by using this code:
 // build.gradle.kts
 buildscript {
    repositories { // For the plugin
-        maven { 
-            url = uri("https://repo.redicloud.dev/releases/")
-            credentials {
-                username = System.getenv("REDI_CLOUD_REPO_USERNAME")
-                password = System.getenv("REDI_CLOUD_REPO_PASSWORD")
-            }
-        }
+        maven("https://repo.redicloud.dev/releases/")
    }
 }
 plugins {
     id("dev.redicloud.libloader") version ("1.6.2")
 }
 repositories { // For the bootstrap
-   maven { 
-      url = uri("https://repo.redicloud.dev/releases/")
-      credentials {
-         username = System.getenv("REDI_CLOUD_REPO_USERNAME")
-         password = System.getenv("REDI_CLOUD_REPO_PASSWORD")
-      }
-   }
+   maven("https://repo.redicloud.dev/releases/")
 }
 ```
 
