@@ -29,8 +29,10 @@ subprojects {
                 name = "redicloud"
                 url = URI("https://repo.redicloud.dev/releases/")
                 credentials(PasswordCredentials::class.java) {
-                    username = System.getenv("REDI_CLOUD_REPO_USERNAME")
-                    password = System.getenv("REDI_CLOUD_REPO_PASSWORD")
+                    username = findProperty("REDI_CLOUD_REPO_USERNAME") as String?
+                        ?: System.getenv("REDI_CLOUD_REPO_USERNAME")
+                    password = findProperty("REDI_CLOUD_REPO_PASSWORD") as String?
+                        ?: System.getenv("REDI_CLOUD_REPO_PASSWORD")
                 }
                 authentication {
                     create<BasicAuthentication>("basic")
