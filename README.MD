@@ -25,15 +25,10 @@ You can add the plugin by using this code:
 
 ```kotlin
 // build.gradle.kts
-buildscript {
-   repositories { // For the plugin
-        maven("https://repo.redicloud.dev/releases/")
-   }
-}
 plugins {
-    id("dev.redicloud.libloader") version ("1.6.2")
+    id("dev.redicloud.libloader") version ("1.6.3")
 }
-repositories { // For the bootstrap
+repositories {
    maven("https://repo.redicloud.dev/releases/")
 }
 ```
