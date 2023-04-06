@@ -40,6 +40,7 @@ public class Bootstrap {
         // Run Main Class
         try {
             Class.forName(bootstrap.configuration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
+            bootstrap.bootSuccess();
         } catch (ClassNotFoundException e) {
             System.out.println("Error while getting main class. Check your gradle build configuration.");
         } catch (NoSuchMethodException e) {
@@ -140,7 +141,7 @@ public class Bootstrap {
                     repositories.forEach(r -> {
                         System.out.println("    " + (r.endsWith("/") ? r : r + "/") + dependency.toPath());
                     });
-                    ignore.ignore().add(dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version());
+                    ignore.ignore().add(dependency.toString());
                     return;
                 } else System.out.println("Found " + dependency);
                 URLConnection con = retrieve((HttpURLConnection) new URL(result).openConnection());

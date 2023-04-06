@@ -11,7 +11,7 @@ plugins {
 
 allprojects {
     group = "dev.redicloud.libloader"
-    version = "1.6.2"
+    version = "1.6.3"
     repositories {
         mavenCentral()
         maven("https://repo.gradle.org/gradle/libs-releases/")
