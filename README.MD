@@ -73,7 +73,7 @@ Example Spigot:
 ```kotlin
 class Plugin: JavaPlugin() {
     override fun onLoad() {
-        Bootstrap.apply(URLClassLoaderJarLoader(this::class.java.classLoader as URLClassLoader))
+        Bootstrap().apply(URLClassLoaderJarLoader(this::class.java.classLoader as URLClassLoader))
     }
 }
 ```
@@ -85,7 +85,7 @@ Example Velocity:
 class Plugin @Inject constructor(private val proxy: ProxyServer) : PluginContainer {
     @Subscribe
     fun init(e: ProxyInitializeEvent) {
-        Bootstrap.apply(URLClassLoaderJarLoader(this::class.java.classLoader as URLClassLoader))
+        Bootstrap().apply(URLClassLoaderJarLoader(this::class.java.classLoader as URLClassLoader))
     }
 }
 ```
