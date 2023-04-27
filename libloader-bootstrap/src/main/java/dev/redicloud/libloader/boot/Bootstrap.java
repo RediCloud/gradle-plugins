@@ -25,6 +25,7 @@ import java.util.*;
 public class Bootstrap {
     public static final Type DEPENDENCY_TYPE = new TypeToken<ArrayList<SelfDependency>>() {}.getType();
     public static final Type REPOSITORY_TYPE = new TypeToken<ArrayList<String>>() {}.getType();
+    private static final List<String> downloadedSnapshots = new ArrayList<>();
     private final ArrayList<String> loaded = new ArrayList<>();
     public static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
@@ -111,7 +112,7 @@ public class Bootstrap {
         });
         if (ignore.ignore().contains(dependency.toString())) return;
         File path = new File(configuration.libraryFolderFile(), dependency.toPath());
-        if (!path.exists() || (dependency.groupId().startsWith("dev.redicloud") && dependency.version().endsWith("SNAPSHOT"))) {
+        if (!path.exists() || (dependency.groupId().startsWith("dev.redicloud") && dependency.version().endsWith("SNAPSHOT") && !downloadedSnapshots.contains(dependency.toString()))) {
             try {
                 System.out.println("Downloading " + dependency);
                 String result = null;
@@ -158,6 +159,10 @@ public class Bootstrap {
                 }
                 fileOutputStream.close();
                 inputStream.close();
+
+                if (dependency.groupId().startsWith("dev.redicloud") && dependency.version().endsWith("SNAPSHOT")) {
+                    downloadedSnapshots.add(dependency.toString());
+                }
             } catch (Throwable t) {
                 System.out.println("Failed to download " + dependency);
                 t.printStackTrace(System.out);
@@ -182,4 +187,5 @@ public class Bootstrap {
         } catch (Exception ignored) {
         }
     }
+
 }
