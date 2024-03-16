@@ -3,8 +3,8 @@ apply(plugin = "maven-publish")
 
 val implementation by configurations
 dependencies {
-    implementation("com.google.code.gson:gson:2.10")
-    implementation("org.jsoup:jsoup:1.15.3")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.jsoup:jsoup:1.17.2")
 }
 
 (project.extensions.getByName("publishing") as PublishingExtension).apply {
