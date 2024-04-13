@@ -1,7 +1,6 @@
 package dev.redicloud.libloader.boot.model;
 
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.*;
 
 @SuppressWarnings("ClassCanBeRecord")
 public final class SelfDependency {
@@ -10,8 +9,12 @@ public final class SelfDependency {
     private final String version;
     private final ArrayList<SelfDependency> dependencies;
 
-    public SelfDependency(String groupId, String artifactId, String version,
-                          ArrayList<SelfDependency> dependencies) {
+    public SelfDependency(
+            final String groupId,
+            final String artifactId,
+            final String version,
+            final ArrayList<SelfDependency> dependencies
+    ) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
@@ -20,43 +23,43 @@ public final class SelfDependency {
 
     @Override
     public String toString() {
-        return groupId + ":" + artifactId + ":" + version;
+        return this.groupId + ":" + this.artifactId + ":" + this.version;
     }
 
     public String toPath() {
-        return groupId.replace(".", "/") + "/" + artifactId + "/" + version + "/" + artifactId + "-" + version + ".jar";
+        return this.groupId.replace(".", "/") + "/" + this.artifactId + "/" + this.version + "/" + this.artifactId + "-" + this.version + ".jar";
     }
 
     public String groupId() {
-        return groupId;
+        return this.groupId;
     }
 
     public String artifactId() {
-        return artifactId;
+        return this.artifactId;
     }
 
     public String version() {
-        return version;
+        return this.version;
     }
 
     public ArrayList<SelfDependency> dependencies() {
-        return dependencies;
+        return this.dependencies;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null || obj.getClass() != this.getClass()) return false;
-        var that = (SelfDependency) obj;
-        return Objects.equals(this.groupId, that.groupId) &&
-                Objects.equals(this.artifactId, that.artifactId) &&
-                Objects.equals(this.version, that.version) &&
-                Objects.equals(this.dependencies, that.dependencies);
+    public boolean equals(final Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null || obj.getClass() != this.getClass()) {
+            return false;
+        }
+        final SelfDependency that = (SelfDependency) obj;
+        return Objects.equals(this.groupId, that.groupId) && Objects.equals(this.artifactId, that.artifactId) && Objects.equals(this.version, that.version) && Objects.equals(this.dependencies, that.dependencies);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(groupId, artifactId, version, dependencies);
+        return Objects.hash(this.groupId, this.artifactId, this.version, this.dependencies);
     }
-
 }

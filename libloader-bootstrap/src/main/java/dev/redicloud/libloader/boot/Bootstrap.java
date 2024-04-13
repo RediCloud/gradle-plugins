@@ -36,12 +36,13 @@ public class Bootstrap {
 
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-        Bootstrap bootstrap = new Bootstrap();
+        System.out.println("Loading libraries...");
+        final Bootstrap bootstrap = new Bootstrap();
         bootstrap.apply(new DefaultJarLoader());
+        bootstrap.bootSuccess();
         // Run Main Class
         try {
             Class.forName(bootstrap.configuration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
-            bootstrap.bootSuccess();
         } catch (ClassNotFoundException e) {
             System.out.println("Error while getting main class. Check your gradle build configuration.");
         } catch (NoSuchMethodException e) {
@@ -58,18 +59,18 @@ public class Bootstrap {
     }
 
     private static String readString(InputStream inputStream) throws IOException {
-        int bufferSize = 1024;
-        char[] buffer = new char[bufferSize];
-        StringBuilder out = new StringBuilder();
-        Reader in = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+        final int bufferSize = 1024;
+        final char[] buffer = new char[bufferSize];
+        final StringBuilder out = new StringBuilder();
+        final Reader in = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
         for (int numRead; (numRead = in.read(buffer, 0, buffer.length)) > 0; ) {
             out.append(buffer, 0, numRead);
         }
         return out.toString();
     }
 
-    public void apply(JarLoader loader) throws IOException, URISyntaxException {
-        apply(loader, Bootstrap.class.getClassLoader(), new ClassLoaderResourceLoader(Bootstrap.class.getClassLoader().getName(), Bootstrap.class.getClassLoader()));
+    public void apply(final JarLoader loader) throws IOException, URISyntaxException {
+        this.apply(loader, Bootstrap.class.getClassLoader(), new ClassLoaderResourceLoader(Bootstrap.class.getClassLoader().getClass().getSimpleName(), Bootstrap.class.getClassLoader()));
     }
 
     public void apply(JarLoader loader, ClassLoader configClassLoader, ResourceLoader... resourceLoaders) throws IOException, URISyntaxException {
@@ -80,7 +81,7 @@ public class Bootstrap {
             configuration = new LibraryConfiguration();
         }
         configuration.libraryFolderFile().mkdirs();
-        File ignoreFile = new File(configuration.libraryFolder(), "ignore.json");
+        final File ignoreFile = new File(configuration.libraryFolder(), "ignore.json");
         if (!ignoreFile.exists()) {
             FileWriter ignoreWrite = new FileWriter(ignoreFile);
             ignoreFile.createNewFile();
@@ -91,8 +92,8 @@ public class Bootstrap {
         this.ignore = gson.fromJson(new FileReader(ignoreFile), IgnoreConfiguration.class);
         ignoreInitialCount = ignore.ignore().size();
         for (ResourceLoader resourceLoader : resourceLoaders) {
-            List<String> repositories = resourceLoader.getRepositories();
-            List<SelfDependency> dependencies = resourceLoader.getDependencies();
+            Set<String> repositories = resourceLoader.getRepositories();
+            Set<SelfDependency> dependencies = resourceLoader.getDependencies();
 
             if (System.getProperty("libloader.debug") != null)
                 System.out.println("Loading " + dependencies.size() + " dependencies from " + resourceLoader.getName());
@@ -104,14 +105,16 @@ public class Bootstrap {
 
     }
 
-    public void resolve(SelfDependency dependency, JarLoader loader, List<String> repositories) {
+    public void resolve(SelfDependency dependency, JarLoader loader, Set<String> repositories) {
         dependency.dependencies().forEach((child_depend) -> {
             if (!loaded.contains(child_depend.toString())) {
                 resolve(child_depend, loader, repositories);
             }
         });
-        if (ignore.ignore().contains(dependency.toString())) return;
-        File path = new File(configuration.libraryFolderFile(), dependency.toPath());
+        if (ignore.ignore().contains(dependency.toString())) {
+            return;
+        }
+        final File path = new File(configuration.libraryFolderFile(), dependency.toPath());
         if (!path.exists() || (dependency.groupId().startsWith("dev.redicloud") && dependency.version().endsWith("SNAPSHOT") && !downloadedSnapshots.contains(dependency.toString()))) {
             try {
                 System.out.println("Downloading " + dependency);
@@ -134,25 +137,27 @@ public class Bootstrap {
                             }
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        e.printStackTrace(System.out);
                     }
                 }
                 if (result == null) {
-                    System.out.println("No matching server found for " + dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version() + "\nTried:");
-                    repositories.forEach(r -> {
-                        System.out.println("    " + (r.endsWith("/") ? r : r + "/") + dependency.toPath());
-                    });
+                    if (System.getProperty("libloader.debug") != null || !dependency.artifactId().endsWith("-bom")) {
+                        System.out.println("No matching server found for " + dependency.groupId() + ":" + dependency.artifactId() + ":" + dependency.version() + "\nTried:");
+                        repositories.forEach(r -> System.out.println("    " + (r.endsWith("/") ? r : r + "/") + dependency.toPath()));
+                    }
                     ignore.ignore().add(dependency.toString());
                     return;
-                } else System.out.println("Found " + dependency);
-                URLConnection con = retrieve((HttpURLConnection) new URL(result).openConnection());
+                } else if (System.getProperty("libloader.debug") != null) {
+                    System.out.println("Found " + dependency);
+                }
+                final URLConnection con = retrieve((HttpURLConnection) new URL(result).openConnection());
 
                 // write content of url to file
-                InputStream inputStream = con.getInputStream();
+                final InputStream inputStream = con.getInputStream();
                 path.getParentFile().mkdirs();
                 path.createNewFile();
-                FileOutputStream fileOutputStream = new FileOutputStream(path);
-                byte[] buffer = new byte[1024];
+                final FileOutputStream fileOutputStream = new FileOutputStream(path);
+                final byte[] buffer = new byte[1024];
                 int length;
                 while ((length = inputStream.read(buffer)) > 0) {
                     fileOutputStream.write(buffer, 0, length);

@@ -1,28 +1,27 @@
 package dev.redicloud.libloader.boot.apply.impl;
 
-import dev.redicloud.libloader.boot.model.SelfDependency;
-import dev.redicloud.libloader.boot.Utils;
-import dev.redicloud.libloader.boot.apply.ResourceLoader;
+import dev.redicloud.libloader.boot.apply.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
+import java.util.*;
+
+import dev.redicloud.libloader.boot.model.*;
+
+import java.net.*;
+
+import dev.redicloud.libloader.boot.*;
 
 public class ClassLoaderResourceLoader implements ResourceLoader {
-
     private final String name;
+    private final Set<SelfDependency> dependencies;
+    private final Set<String> repositories;
 
-    private final List<SelfDependency> dependencies;
-    private final List<String> repositories;
-
-
-    public ClassLoaderResourceLoader(String name, ClassLoader classLoader) {
+    public ClassLoaderResourceLoader(final String name, final ClassLoader classLoader) {
         this.name = name;
         try {
-            URI uri = classLoader.getResource("depends").toURI();
-            Utils.Pair<List<SelfDependency>, List<String>> pair = Utils.walkThroughFS(uri);
-            dependencies = pair.first();
-            repositories = pair.second();
+            final URI uri = Objects.requireNonNull(classLoader.getResource("depends")).toURI();
+            final Pair<Set<SelfDependency>, Set<String>> pair = Utils.walkThroughFS(uri);
+            this.dependencies = pair.first();
+            this.repositories = pair.second();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -30,16 +29,16 @@ public class ClassLoaderResourceLoader implements ResourceLoader {
 
     @Override
     public String getName() {
-        return name;
+        return this.name;
     }
 
     @Override
-    public List<SelfDependency> getDependencies() {
-        return dependencies;
+    public Set<SelfDependency> getDependencies() {
+        return this.dependencies;
     }
 
     @Override
-    public List<String> getRepositories() {
-        return repositories;
+    public Set<String> getRepositories() {
+        return this.repositories;
     }
 }

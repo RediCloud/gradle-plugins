@@ -1,18 +1,14 @@
 package dev.redicloud.libloader.boot.loaders;
 
-import dev.redicloud.libloader.boot.Agent;
-import dev.redicloud.libloader.boot.JarLoader;
+import java.net.*;
+import java.io.*;
+import java.util.jar.*;
 
-import java.io.File;
-import java.net.URL;
-import java.util.jar.JarFile;
+import dev.redicloud.libloader.boot.*;
 
 public class DefaultJarLoader implements JarLoader {
-    public DefaultJarLoader() {
-    }
-
     @Override
-    public void load(URL javaFile) {
+    public void load(final URL javaFile) {
         try {
             Agent.appendJarFile(new JarFile(new File(javaFile.toURI())));
         } catch (Throwable t) {

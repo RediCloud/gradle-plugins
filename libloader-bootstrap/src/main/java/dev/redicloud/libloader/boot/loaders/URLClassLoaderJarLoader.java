@@ -20,16 +20,16 @@ import java.net.URLClassLoader;
 public class URLClassLoaderJarLoader implements JarLoader {
     private final URLClassLoader classLoader;
 
-    public URLClassLoaderJarLoader(URLClassLoader classLoader) {
+    public URLClassLoaderJarLoader(final URLClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
     @Override
-    public void load(URL javaFile) {
+    public void load(final URL javaFile) {
         try {
-            Method method = classLoader.getClass().getSuperclass().getDeclaredMethod("addURL", URL.class);
+            final Method method = this.classLoader.getClass().getSuperclass().getDeclaredMethod("addURL", URL.class);
             method.setAccessible(true);
-            method.invoke(classLoader, javaFile);
+            method.invoke(this.classLoader, javaFile);
         } catch (Throwable t) {
             System.out.println("Error while loading JarFile " + javaFile);
             t.printStackTrace(System.out);

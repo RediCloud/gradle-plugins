@@ -1,36 +1,30 @@
 package dev.redicloud.libloader.boot;
 
-import dev.redicloud.libloader.boot.model.SelfDependency;
+import java.net.*;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Stream;
+import dev.redicloud.libloader.boot.model.*;
 
-import static dev.redicloud.libloader.boot.Bootstrap.*;
+import java.io.*;
+import java.nio.file.*;
+import java.util.stream.*;
+import java.util.*;
 
 public class Utils {
-    public record Pair<F, S>(F first, S second) {}
-    public static Pair<List<SelfDependency>, List<String>> walkThroughFS(URI uri) {
-        List<SelfDependency> dependencies = new ArrayList<>();
-        List<String> repositories = new ArrayList<>();
+    public static Pair<Set<SelfDependency>, Set<String>> walkThroughFS(final URI uri) {
+        final List<SelfDependency> dependencies = new ArrayList<>();
+        final List<String> repositories = new ArrayList<>();
         try {
-            FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
-            Stream<Path> walk = Files.walk(fileSystem.getPath("depends"));
+            final FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+            final Stream<Path> walk = Files.walk(fileSystem.getPath("depends"));
             for (Iterator<Path> it = walk.iterator(); it.hasNext(); ) {
                 Path path = it.next();
                 if (path.getFileName().toString().startsWith("dependencies")) {
-                    dependencies.addAll(gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), DEPENDENCY_TYPE));
-                } else if (path.getFileName().toString().startsWith("repositories")) {
-                    repositories.addAll(gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), REPOSITORY_TYPE));
+                    dependencies.addAll(Bootstrap.gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), Bootstrap.DEPENDENCY_TYPE));
+                } else {
+                    if (!path.getFileName().toString().startsWith("repositories")) {
+                        continue;
+                    }
+                    repositories.addAll(Bootstrap.gson.fromJson(new InputStreamReader(path.toUri().toURL().openStream()), Bootstrap.REPOSITORY_TYPE));
                 }
             }
             walk.close();
@@ -38,6 +32,6 @@ public class Utils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return new Pair<>(dependencies, repositories);
+        return new Pair<>(new HashSet<>(dependencies), new HashSet<>(repositories));
     }
 }
