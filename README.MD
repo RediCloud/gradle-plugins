@@ -26,7 +26,7 @@ You can add the plugin by using this code:
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("dev.redicloud.libloader") version ("1.6.3")
+    id("dev.redicloud.libloader") version ("1.7.0")
 }
 repositories {
    maven("https://repo.redicloud.dev/releases/")
