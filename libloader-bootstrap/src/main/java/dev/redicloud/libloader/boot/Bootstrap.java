@@ -36,6 +36,13 @@ public class Bootstrap {
 
 
     public static void main(String[] args) throws IOException, URISyntaxException {
+        if (System.getProperty("libloader.debug.delay") != null) {
+            try {
+                Thread.sleep(Long.parseLong(System.getProperty("libloader.debug.delay")));
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Failed to sleep", e);
+            }
+        }
         System.out.println("Loading libraries...");
         final Bootstrap bootstrap = new Bootstrap();
         bootstrap.apply(new DefaultJarLoader());
@@ -182,14 +189,17 @@ public class Bootstrap {
     }
 
     public void bootSuccess() {
-        if (succeeded || ignoreInitialCount <= ignore.ignore().size()) return;
+        if (succeeded || ignoreInitialCount == ignore.ignore().size()) {
+            return;
+        }
         try {
             FileWriter writer = new FileWriter(new File(configuration.libraryFolderFile(), "ignore.json"));
             gson.toJson(ignore, writer);
             writer.flush();
             writer.close();
             succeeded = true;
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save ignore.json", e);
         }
     }
 

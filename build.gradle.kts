@@ -16,6 +16,16 @@ allprojects {
         mavenCentral()
         maven("https://repo.gradle.org/gradle/libs-releases/")
     }
+    tasks {
+        withType<KotlinCompile> {
+            kotlinOptions.jvmTarget = "1.8"
+        }
+
+        withType<JavaCompile> {
+            options.release.set(8)
+            options.encoding = "UTF-8"
+        }
+    }
 }
 subprojects {
     apply(plugin = "maven-publish")
@@ -39,11 +49,6 @@ subprojects {
                 }
             }
         }
-    }
-
-
-    tasks.withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
     }
     java {
         withSourcesJar()

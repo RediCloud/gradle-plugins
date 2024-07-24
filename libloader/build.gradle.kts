@@ -28,9 +28,3 @@ tasks.named<Jar>("jar") {
         }
     }
 }
-
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.kotlinOptions {
-    jvmTarget = "17"
-}
-
