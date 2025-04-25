@@ -84,7 +84,7 @@ class LibraryLoader : Plugin<Project> {
 
         target.afterEvaluate {
             if ((it.extensions.getByName("libloader-config") as LibraryLoaderConfig).doBootstrapShade.get())
-                it.dependencies.add("shade", "dev.redicloud.libloader:libloader-bootstrap:1.6.2")
+                it.dependencies.add("shade", "dev.redicloud.libloader:libloader-bootstrap:1.7.0")
         }
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Jar::class.java, Action { it ->
