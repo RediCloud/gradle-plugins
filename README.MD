@@ -26,12 +26,24 @@ You can add the plugin by using this code:
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("dev.redicloud.libloader") version ("1.7.0")
+    id("dev.redicloud.libloader") version "1.7.0"
 }
 repositories {
-   maven("https://repo.redicloud.dev/releases/")
+    maven("https://maven.pkg.github.com/RediCloud/gradle-plugins") {
+        credentials {
+            username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+            password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
 }
 ```
+
+> **Note:** GitHub Packages requires authentication. Add the following to your `~/.gradle/gradle.properties`:
+> ```properties
+> gpr.user=YOUR_GITHUB_USERNAME
+> gpr.key=YOUR_GITHUB_PERSONAL_ACCESS_TOKEN
+> ```
+> The token needs the `read:packages` scope.
 
 ##### Configuration
 
