@@ -36,16 +36,13 @@ subprojects {
     publishing {
         repositories {
             maven {
-                name = "redicloud"
-                url = URI("https://repo.redicloud.dev/releases/")
-                credentials(PasswordCredentials::class.java) {
-                    username = findProperty("REDI_CLOUD_REPO_USERNAME") as String?
-                        ?: System.getenv("REDI_CLOUD_REPO_USERNAME")
-                    password = findProperty("REDI_CLOUD_REPO_PASSWORD") as String?
-                        ?: System.getenv("REDI_CLOUD_REPO_PASSWORD")
-                }
-                authentication {
-                    create<BasicAuthentication>("basic")
+                name = "GitHubPackages"
+                url = URI("https://maven.pkg.github.com/RediCloud/gradle-plugins")
+                credentials {
+                    username = findProperty("gpr.user") as String?
+                        ?: System.getenv("GITHUB_ACTOR")
+                    password = findProperty("gpr.key") as String?
+                        ?: System.getenv("GITHUB_TOKEN")
                 }
             }
         }
