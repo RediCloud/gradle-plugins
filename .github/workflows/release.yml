@@ -1,0 +1,246 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 1.8.0) — leave empty to use version from build.gradle.kts'
+        required: false
+        default: ''
+      channel:
+        description: 'Release channel'
+        required: true
+        type: choice
+        options:
+          - stable
+          - beta
+      prerelease_suffix:
+        description: 'Pre-release suffix (e.g. rc1, beta1) — only for beta channel'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run — build everything but do not publish'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # ── Build, publish to GitHub Packages, and create GitHub Release ───
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release_version: ${{ steps.version.outputs.release_version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── Resolve version ────────────────────────────────────────────
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=$(grep -oP 'version\s*=\s*"\K[^"]+' build.gradle.kts | head -1)
+          fi
+
+          SUFFIX="${{ inputs.prerelease_suffix }}"
+          if [ "${{ inputs.channel }}" = "beta" ] && [ -n "$SUFFIX" ]; then
+            RELEASE_VERSION="${VERSION}-${SUFFIX}"
+          else
+            RELEASE_VERSION="${VERSION}"
+          fi
+
+          TAG="v${RELEASE_VERSION}"
+
+          echo "version=$VERSION"                 >> "$GITHUB_OUTPUT"
+          echo "release_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"                         >> "$GITHUB_OUTPUT"
+
+          echo "### Version Info" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Base version | \`$VERSION\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release version | \`$RELEASE_VERSION\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag | \`$TAG\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Channel | \`${{ inputs.channel }}\` |" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Set up JDK ─────────────────────────────────────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # ── Set up Gradle ──────────────────────────────────────────────
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # ── Update version in build.gradle.kts if overridden ───────────
+      - name: Set version
+        run: |
+          RELEASE_VERSION="${{ steps.version.outputs.release_version }}"
+          sed -i "s/version = \"[^\"]*\"/version = \"${RELEASE_VERSION}\"/" build.gradle.kts
+          echo "Version in build.gradle.kts set to: $RELEASE_VERSION"
+          grep 'version =' build.gradle.kts
+
+      # ── Build ──────────────────────────────────────────────────────
+      - name: Build
+        run: ./gradlew build
+
+      # ── Publish to GitHub Packages ─────────────────────────────────
+      - name: Publish to GitHub Packages
+        if: ${{ !inputs.dry_run }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: ./gradlew publish
+
+      # ── Upload build artifacts ─────────────────────────────────────
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.version.outputs.release_version }}
+          path: |
+            libloader/build/libs/*.jar
+            libloader-bootstrap/build/libs/*.jar
+          retention-days: 5
+
+  # ── Create GitHub Release ──────────────────────────────────────────
+  release:
+    needs: build
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-${{ needs.build.outputs.release_version }}
+          path: dist/
+
+      # ── Find previous tag ──────────────────────────────────────────
+      - name: Find previous tag
+        id: prev_tag
+        run: |
+          git fetch --tags
+          PREV=$(git tag --sort=-version:refname | head -n 1)
+          echo "tag=${PREV}" >> "$GITHUB_OUTPUT"
+
+      # ── Create git tag ─────────────────────────────────────────────
+      - name: Create tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.build.outputs.tag }}"
+          FULL_SHA=$(git rev-parse HEAD)
+          gh api repos/${{ github.repository }}/git/refs \
+            -f ref="refs/tags/${TAG}" \
+            -f sha="${FULL_SHA}"
+
+      # ── Build release body ─────────────────────────────────────────
+      - name: Build release body
+        run: |
+          RV="${{ needs.build.outputs.release_version }}"
+          TAG="${{ needs.build.outputs.tag }}"
+          CHANNEL="${{ inputs.channel }}"
+          PREV_TAG="${{ steps.prev_tag.outputs.tag }}"
+          REPO="${{ github.repository }}"
+
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG_LINK="**Full changelog**: https://github.com/${REPO}/compare/${PREV_TAG}...${TAG}"
+          else
+            CHANGELOG_LINK="**Full changelog**: https://github.com/${REPO}/commits/${TAG}"
+          fi
+
+          cat > /tmp/release-body.md <<BODY_EOF
+          ## Release info
+
+          | | |
+          |---|---|
+          | **Version** | \`${RV}\` |
+          | **Channel** | \`${CHANNEL}\` |
+
+          ## Maven coordinates
+
+          \`\`\`kotlin
+          repositories {
+              maven("https://maven.pkg.github.com/RediCloud/gradle-plugins") {
+                  credentials {
+                      username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                      password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+                  }
+              }
+          }
+
+          dependencies {
+              implementation("dev.redicloud.libloader:libloader-bootstrap:${RV}")
+          }
+
+          // or as Gradle plugin:
+          plugins {
+              id("dev.redicloud.libloader") version "${RV}"
+          }
+          \`\`\`
+
+          ## Changelog
+
+          ${CHANGELOG_LINK}
+          BODY_EOF
+
+          sed -i 's/^          //' /tmp/release-body.md
+
+      # ── Create GitHub Release ──────────────────────────────────────
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RV="${{ needs.build.outputs.release_version }}"
+          TAG="${{ needs.build.outputs.tag }}"
+
+          PRERELEASE_FLAG=""
+          if [ "${{ inputs.channel }}" = "beta" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          # Collect JAR files
+          ASSETS=()
+          for jar in dist/libloader/build/libs/*.jar dist/libloader-bootstrap/build/libs/*.jar; do
+            if [ -f "$jar" ]; then
+              ASSETS+=("$jar")
+            fi
+          done
+
+          gh release create "$TAG" \
+            --title "v${RV}" \
+            --notes-file /tmp/release-body.md \
+            $PRERELEASE_FLAG \
+            "${ASSETS[@]}"
+
+  # ── Summary ────────────────────────────────────────────────────────
+  summary:
+    needs: [build, release]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          RV="${{ needs.build.outputs.release_version }}"
+          echo "## Release ${RV}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Step | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag | \`${{ needs.build.outputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Dry run | \`${{ inputs.dry_run }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build | \`${{ needs.build.result }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release | \`${{ needs.release.result }}\` |" >> "$GITHUB_STEP_SUMMARY"
