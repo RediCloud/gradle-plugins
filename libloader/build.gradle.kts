@@ -21,6 +21,7 @@ java {
 }
 
 val generateVersionFile by tasks.registering {
+    description = "Generates PluginVersion.kt with the current project version"
     val outputDir = layout.buildDirectory.dir("generated/version")
     outputs.dir(outputDir)
     doLast {
