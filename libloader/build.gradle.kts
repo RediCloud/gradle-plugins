@@ -1,10 +1,27 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+    `java-gradle-plugin`
+    `maven-publish`
+}
 
-apply(plugin = "kotlin")
-apply(plugin = "java-gradle-plugin")
-apply(plugin = "maven-publish")
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(17)
+    options.encoding = "UTF-8"
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
 
 val generateVersionFile by tasks.registering {
+    description = "Generates PluginVersion.kt with the current project version"
     val outputDir = layout.buildDirectory.dir("generated/version")
     outputs.dir(outputDir)
     doLast {
@@ -28,13 +45,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     dependsOn(generateVersionFile)
 }
 
-val implementation by configurations
-val compileOnly by configurations
-repositories {
-    mavenCentral()
-}
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
+    implementation(libs.kotlin.stdlib)
     compileOnly(gradleApi())
 }
 
@@ -42,7 +54,7 @@ tasks.named<Jar>("jar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-(project.extensions.getByName("gradlePlugin") as GradlePluginDevelopmentExtension).apply {
+gradlePlugin {
     plugins {
         create("libloader") {
             id = "dev.redicloud.libloader"

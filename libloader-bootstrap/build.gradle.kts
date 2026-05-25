@@ -1,23 +1,30 @@
-apply(plugin = "java")
-apply(plugin = "maven-publish")
-
-val implementation by configurations
-dependencies {
-    implementation("com.google.code.gson:gson:2.10.1")
-    implementation("org.jsoup:jsoup:1.17.2")
+plugins {
+    java
+    `maven-publish`
 }
 
-(project.extensions.getByName("publishing") as PublishingExtension).apply {
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(8)
+    options.encoding = "UTF-8"
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+dependencies {
+    implementation(libs.gson)
+    implementation(libs.jsoup)
+}
+
+publishing {
     publications {
         create<MavenPublication>("bootstrap") {
-            this.groupId = "${project.group}"
-            this.version = "${project.version}"
-            this.artifactId = project.name
+            groupId = "${project.group}"
+            version = "${project.version}"
+            artifactId = project.name
             from(components["java"])
         }
     }
-}
-(project.extensions.getByName("java") as JavaPluginExtension).apply {
-    withSourcesJar()
-    withJavadocJar()
 }

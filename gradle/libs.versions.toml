@@ -1,0 +1,12 @@
+[versions]
+kotlin = "2.3.20"
+gson = "2.14.0"
+jsoup = "1.22.2"
+
+[libraries]
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
