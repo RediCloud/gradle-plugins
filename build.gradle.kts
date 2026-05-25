@@ -1,13 +1,6 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.net.URI
-
 plugins {
-    kotlin("jvm") version "1.9.23"
-    id("java-gradle-plugin")
-    java
-    id("maven-publish")
+    alias(libs.plugins.kotlin.jvm) apply false
 }
-
 
 allprojects {
     group = "dev.redicloud.libloader"
@@ -16,28 +9,16 @@ allprojects {
         mavenCentral()
         maven("https://repo.gradle.org/gradle/libs-releases/")
     }
-    tasks {
-        withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "1.8"
-        }
-
-        withType<JavaCompile> {
-            options.release.set(8)
-            options.encoding = "UTF-8"
-        }
-    }
 }
+
 subprojects {
     apply(plugin = "maven-publish")
-    apply(plugin = "java")
-    repositories {
-        mavenCentral()
-    }
-    publishing {
+
+    configure<PublishingExtension> {
         repositories {
             maven {
                 name = "GitHubPackages"
-                url = URI("https://maven.pkg.github.com/RediCloud/gradle-plugins")
+                url = uri("https://maven.pkg.github.com/RediCloud/gradle-plugins")
                 credentials {
                     username = findProperty("gpr.user") as String?
                         ?: System.getenv("GITHUB_ACTOR")
@@ -46,9 +27,5 @@ subprojects {
                 }
             }
         }
-    }
-    java {
-        withSourcesJar()
-        withJavadocJar()
     }
 }
