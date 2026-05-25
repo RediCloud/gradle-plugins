@@ -88,7 +88,7 @@ class LibraryLoader : Plugin<Project> {
         }
         @Suppress("RedundantSamConstructor")
         target.tasks.named("jar", Jar::class.java, Action { it ->
-            it.from("${target.buildDir}/depends") {
+            it.from(target.layout.buildDirectory.dir("depends")) {
                 it.include("**")
                 it.into("depends")
             }
@@ -102,8 +102,8 @@ class LibraryLoader : Plugin<Project> {
                 val configuration =
                     target.configurations.getByName(extension.configurationName.get()).resolvedConfiguration
                 // Dependencies File
-                val dependsFile =
-                    target.buildDir.resolve("depends").also { it.mkdirs() }
+                val dependsDir = target.layout.buildDirectory.dir("depends").get().asFile.also { it.mkdirs() }
+                val dependsFile = dependsDir
                         .resolve("dependencies${extension.configurationFileSuffix.get()}.json")
                 dependsFile.writeText(
                     SelfDependencies.getSelfDependencies(configuration)
@@ -112,7 +112,7 @@ class LibraryLoader : Plugin<Project> {
                 )
                 // Repositories File
                 val repoFile =
-                    target.buildDir.resolve("depends//repositories${extension.configurationFileSuffix.get()}.json")
+                    dependsDir.resolve("repositories${extension.configurationFileSuffix.get()}.json")
                         .also { it.createNewFile() }
                 repoFile.writeText(
                     target.repositories.filterNot { (it as UrlArtifactRepository).url.toString().startsWith("file:/") }
@@ -122,7 +122,7 @@ class LibraryLoader : Plugin<Project> {
                 )
                 // Configuration
                 val configFile =
-                    target.buildDir.resolve("depends//config.json").also { it.createNewFile() }
+                    dependsDir.resolve("config.json").also { it.createNewFile() }
                 configFile.writeText(
                     """
                     {
